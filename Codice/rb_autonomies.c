@@ -11,12 +11,40 @@ typedef struct autonotree
     autochildren children[2]; //[0] left, [1] right;
     byte color;
 } autoelement;
+ 
+autoelement * successore(autoelement * ref, int x){
+    autoelement * start_from = search(ref, x);
+    if(start_from ->children[1] != NULL)
+        return start_from ->children[1];
+    autoelement * ancestor = start_from ->father;
+    while (ancestor != NULL && ancestor ->children[1] == start_from)
+    {
+        start_from = ancestor;
+        ancestor = ancestor ->father;
+    }
+    return ancestor;
+}
 autoelement * root(autoelement * ref)
 {
     autoelement * curr = ref;
     while (curr->father != NULL)
         curr = curr->father;
     return curr;
+}
+//0 for left, 1 for right
+void rootupdatemethod(autoelement * ref, autoelement * child){
+    if(child ->children[0] == NULL && child->children[1] == NULL)
+        return;
+    child -> root = ref ->root;
+    ref = child;
+    rootupdatemethod(ref, ref ->children[0]);
+    rootupdatemethod(ref, ref ->children[1]);
+}
+void rootupdate(autoelement * ref){
+    if(ref ->children[0] != NULL) 
+        rootupdatemethod(ref, ref ->children[0]);
+    if(ref->children[1] != NULL)
+        rootupdatemethod(ref, ref ->children[1]);
 }
 //ricerca il nodo con il valore x
 autoelement * search(autoelement * ref,int x){
@@ -63,22 +91,26 @@ autoelement * rotate(autoelement * ref, autoelement * ruotato, int verso){
     ruotato->father = cur;
 }
 //fixing figlio sinistro se isright è 0, destro se isright è 1.
-void fix(autoelement * inserito,int isright){
-    autoelement * y = inserito ->father->father ->children[isright];
+void fix(autoelement*ref, autoelement * inserito,int isright){
+    autoelement * y = inserito ->father->father->children[isright];
     if(y->color == 1)
     {
-        inserito ->father->color = 0;
-        y ->color = 0;
+        inserito->father->color = 0;
+        y->color = 0;
         inserito ->father ->father->color = 1;
         inserito = inserito ->father->father;
     }
-    else if(inserito == inserito->father->children[isright]){
+    else 
+    {
+        if(inserito == inserito->father->children[isright])
+        {
         inserito = inserito->father;
-        //rotate(,1);
+        rotate(ref,inserito,1);
+        }
+        inserito ->father->color = 0;
+        inserito ->father->father ->color = 1;
+        rotate(ref,inserito->father->father,-1);
     }
-    inserito ->father->color = 0;
-    inserito ->father->father ->color = 1;
-    //rotate(,-1);
 }
 void RiparaRbInserisci(autoelement*ref, autoelement * inserito){
     while (inserito->father->color == 1) // finché papà è rosso
@@ -112,4 +144,31 @@ void inseriscielemento(autoelement*ref, autoelement*insert){
     RiparaRbInserisci(ref,insert);
 }
 
-
+void cancellaelemento(autoelement * ref, autoelement *cancel){
+    autoelement * da_canc;
+    autoelement * sottoa;
+    //individuo nodo da cancellare.
+    if(cancel -> children[0] == NULL || cancel ->children[1] == NULL)
+        da_canc = cancel;
+    else da_canc = successore(cancel);
+    //individuano sottoalbero da spostare e spostano riferimento a padre.
+    if(da_canc->children[0] != NULL)
+        sottoa = da_canc->children[0];
+    else
+        sottoa = da_canc->children[1];
+    if(sottoa != NULL)
+        sottoa->father = da_canc ->father;
+    //correzione riferimento a padre.
+    if(da_canc ->father == NULL){
+        ref->root = sottoa;
+        rootupdate(ref);
+    }
+    else if(da_canc == da_canc ->father->children[0])
+        da_canc ->father->children[0] = sottoa;
+    else da_canc ->father->children[1] = sottoa;
+    //copiatura valore chiave.
+    if(da_canc != cancel)
+        cancel ->value = da_canc ->value;
+    free(da_canc);
+}
+//fai rbcancella.
