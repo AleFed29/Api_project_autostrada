@@ -1,13 +1,9 @@
 #include<stdio.h>
 #include<stdlib.h>
-#include<rb_autonomies.h> //(?)
 
-//qui farai i metodi e la struct per le stazioni
-typedef struct stazione
-{
-    int kilometraggio;
-    autonotree * vetture;
-};
+/*
+copia di peso da "rbtree_str.c" purtroppo per il progetto va tutto su un file
+*/
 
 //if max(vetture) -> value > stazione1 -> kilometraggio -  stazione -> kilometraggio; ok.
 //alberi rossoneri anche là? può essere idea, perché ti muovi a w sull'albero.

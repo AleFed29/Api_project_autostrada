@@ -9,24 +9,55 @@ typedef struct rbtree
     rbchildren children[2]; //[0] left, [1] right;
     byte color;
 } rbelement;
- 
+
 typedef struct head
 {
-    struct tail * father;
-    struct rbelement * root;
+    rbelement * root;
+    struct tail * treetail; //come posso mettere rbtail qua?
 } rbhead;
+
 typedef struct tail
 {
-    (void*) NIL = NULL;
-    struct rbhead * child;
+    void* NIL;
+    struct head * child; //come posso mettere rbhead qua?
 }rbtail;
+
+rbelement * construct_tree(int value, rbelement * father, rbchildren childs[2]){
+    rbelement * new;
+    new ->value = value;
+    new ->father = father;
+    new ->children[0] = childs[0];
+    new ->children[1] = childs[1];
+    new ->color = 0;
+    return new;
+}
+rbhead * construct_head(rbelement *roote){
+    rbhead * head;
+    head ->root = roote;
+    head ->treetail = NULL;
+}
+rbtail * construct_tail(rbhead * childh){
+    rbtail * tail;
+    tail ->NIL = NULL;
+    childh ->treetail = tail;
+    tail->child = childh;
+    //tail->child->treetail = tail;
+    return tail; 
+}
+rbhead * Initializetree(int value){
+    rbchildren children [2] = {NULL, NULL};
+    rbelement * ref = construct_tree(value, NULL, children);
+    rbhead * head = construct_head(ref);
+    rbtail * tail = construct_tail(head);
+    return head;
+}
 
 #pragma region metodi non utilizzati da utente (private)
 //ricerca il nodo con il valore x
 rbelement * searchelem(rbelement * ref,int x, rbtail * end){
     if(ref == end -> NIL || ref->value == x)
         return ref;
-    return searchelem(ref ->children[int(ref->value < x)], x); //se ho elemento minore cerco a destra, indice 1, altrim a sinistra. 
+    return searchelem(ref ->children[(int)(ref->value < x)], x,end); //se ho elemento minore cerco a destra, indice 1, altrim a sinistra. 
 }
 //ritorna min se minzero_maxone è zero, max se è uno. 
 rbelement * extreme_value_byroot(rbelement * ref, int minzero_maxone, rbtail* end){
@@ -34,11 +65,6 @@ rbelement * extreme_value_byroot(rbelement * ref, int minzero_maxone, rbtail* en
     while (cur -> children[minzero_maxone] != end -> NIL)
         cur = cur -> children[minzero_maxone];
     return cur;
-}
-//ritorna min se minzero_maxone è zero, max se è uno.
-rbelement *extreme_value(rbhead * ref, int minzero_maxone, rbtail* end){
-    rbelement * newref = ref ->root;
-    return extreme_value_byroot(newref,minzero_maxone,end);
 }
 //se verso = 1 prendo successore, se verso è -1 prendo predecessore.
 rbelement * adiacente(rbelement * ref, int verso, rbtail * end){
@@ -55,26 +81,23 @@ rbelement * adiacente(rbelement * ref, int verso, rbtail * end){
 } 
 #pragma endregion
 
-//ricerca il nodo con il valore x
-rbelement * search(rbhead * ref,int x, rbtail * end){
-    rbelement * newref = ref ->root;
-    return searchelem(newref,x,end);
+rbelement * search(rbhead*ref, int x){
+    return searchelem(ref ->root,x, ref->treetail);
 }
-rbelement * max(rbhead * ref, rbtail* end)
-{
-    return extreme_value(ref,1,end);
+rbelement * max(rbhead * ref){
+    return extreme_value_byroot(ref->root, 1, ref->treetail);
 }
-rbelement * min(rbhead * ref, rbtail* end)
-{
-    return extreme_value(ref,0,end);
+rbelement * min(rbhead * ref){
+    return extreme_value_byroot(ref->root, 0, ref->treetail);
 }
-rbelement * successore_byref(rbelement*ref, rbtail*end){
-    return adiacente(ref,1,end);
+rbelement * successore(rbhead * head, rbelement * elem){
+    return adiacente(elem,1, head->treetail);
 }
-rbelement * predecessore_byref(rbelement*ref, rbtail*end){
-    return adiacente(ref,-1,end);
+rbelement * predecessore(rbhead * head, rbelement * elem){
+    return adiacente(elem,-1, head->treetail);
 }
 
+//da controllare
 // se verso è -1, il senso è orario (right); se verso è 1, il senso è antiorario (left)
 rbelement * rotate(rbhead * ref, rbelement * ruotato, int verso, rbtail * end){
     verso = (verso + 1)/2; //0 se -1, 1 se 1.
@@ -124,6 +147,8 @@ void RiparaRbInserisci(rbhead*ref, rbelement * inserito){
     ref->root->color = 0;
 }
 
+
+
 void inseriscielemento(rbhead*ref, rbelement*insert, rbtail*end){
     rbelement* precedente = end -> NIL;
     rbelement* corrente = ref->root;
@@ -161,7 +186,6 @@ void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
     //correzione riferimento a padre.
     if(da_canc ->father == end -> NIL){
         ref->root = sottoa;
-        rootupdate(ref);
     }
     else if(da_canc == da_canc ->father->children[0])
         da_canc ->father->children[0] = sottoa;
@@ -173,5 +197,13 @@ void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
 }
 //fai rbcancella.
 void insert(rbhead*ref, int x, rbtail*end){
-    //fai metodo costruttore.
+    rbelement * t = construct_tree(x,NULL, end->NIL);//fai metodo costruttore.
+    inseriscielemento(ref, t,end); //prova a vedere
 }
+
+
+
+
+
+
+
