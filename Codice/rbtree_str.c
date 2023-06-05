@@ -170,7 +170,7 @@ void insert(rbhead*ref, int x, rbtail*end){
 }
 void RiparaRbCancella(rbhead*ref, rbelement * sostituto){
     if(sostituto ->color == 1)
-        sostituto ->color == 0;
+        sostituto ->color = 0;
     else //sostituto è nero.
     {
         int index;
@@ -250,8 +250,8 @@ void RiparaRbCancella(rbhead*ref, rbelement * sostituto){
     }
 }
 void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
-    rbelement * da_canc;
-    rbelement * sottoa;
+    rbelement * da_canc/*=(rbelement*)malloc(sizeof(rbelement))*/;
+    rbelement * sottoa/*=(rbelement*)malloc(sizeof(rbelement))*/;
     //individuo nodo da cancellare.
     if(cancel -> children[0] == end -> NIL || cancel ->children[1] == end -> NIL)
         da_canc = cancel;
@@ -285,6 +285,32 @@ int main()
     insert(h,5,h->treetail);
     insert(h,15,h->treetail);
     rbelement * m = max(h);
-    printf("\n %d", m -> value);
+    rbelement * i = min(h);
+    printf("\n %d", m -> value); //stampa 15
+    printf("\n %d", i -> value); //stampa 5
+    printf("\n %d", i->father->value); //stampa 10
+    insert(h, 7, h->treetail);
+    insert(h, 2, h->treetail);
+    insert(h, 3, h->treetail);
+    insert(h, 11, h->treetail);
+    rbelement* nemo = search(h, 7);
+    rbelement* pensosianull = search(h,9);
+    printf("\n %d", nemo->value);
+    if(pensosianull == NULL)
+        printf("\n non esiste 9");
+    rbelement * dory = successore(h,nemo);
+    printf("\n %d", dory -> value); //esce 10.
+    insert(h, 9, h->treetail);
+    dory = successore(h,nemo);
+    printf("\n %d", dory -> value);//esce 9
+    rbelement * tre = search(h,3);
+    printf("\n %d", tre -> value); //esce 3
+    rbelement * due = predecessore(h,tre);
+    printf("\n %d", due -> value);//esce 2
+    rbelement * undici = search(h, 11);
+    cancellaelemento(h, undici, h->treetail);
+    rbelement * pensoundicinoncisiapiu = search(h,11);
+    if(pensoundicinoncisiapiu == NULL)
+        printf("\n 11 cancellato");
     return 0;
 }*/
