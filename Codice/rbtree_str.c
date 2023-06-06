@@ -277,7 +277,7 @@ void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
     RiparaRbCancella(ref,sottoa); //sottoa ha preso il posto di da_canc, non deve violare norme alberi rossoneri.
 }
 
-/*
+
 int main()
 {
     printf("Hello World");
@@ -313,4 +313,4 @@ int main()
     if(pensoundicinoncisiapiu == NULL)
         printf("\n 11 cancellato");
     return 0;
-}*/
+}
