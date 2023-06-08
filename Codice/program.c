@@ -1,5 +1,6 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 /*
 copia di peso da "rbtree_str.c" purtroppo per il progetto va tutto su un file
@@ -18,99 +19,94 @@ typedef struct percorso{
     struct percorso * next;
 }path;
 */
-typedef struct 
+typedef struct station 
 {
     int kms;
-    int level;
-    int index;
+    struct station * next;
+    struct station * prev;
     //rbhead * vetture;
 }stazione;
 typedef struct 
 {
-    stazione * AUTOSTRADA;
-    int len;
+    stazione ** AUTOSTRADA;
     int lastindex;
+    int len;
 }route;
-int IndexOf(stazione * s){
-    return 8*(s->level) + s->index + 1;
-}
 route * InitializeAUTOSTRADA(int kms1/*,rbhead * autos*/){
     route * r = (route *) malloc(sizeof(route));
     r->len = 4;
-    r-> AUTOSTRADA = (stazione *) malloc(sizeof(stazione)*4);
-    r-> AUTOSTRADA[0] = {0, 0, -1};
-    r-> AUTOSTRADA[1] -> kms = kms1;
-    r->AUTOSTRADA[1] -> level = 0;
-    r->AUTOSTRADA[1] -> index = 0;
-    //r->AUTOSTRADA[1] -> vetture = autos;
-    r->AUTOSTRADA[2] = NULL;
-    r->AUTOSTRADA[3] = NULL;
-    r->lastindex = 1;
+    r-> AUTOSTRADA = (stazione **) malloc(sizeof(stazione*)*4);
+    r-> AUTOSTRADA[0] ->kms = kms1;
+    r->AUTOSTRADA[0]->next = NULL;
+    r->AUTOSTRADA[0]->prev = NULL;
+    //r->AUTOSTRADA[0] -> vetture = autos;
+    r->lastindex = 0;
     return r;
 }
-stazione * initializestazione(int km, int lev, int ind/*,rbhead * autos*/){
+stazione * initializestazione(int km/*,rbhead * autos*/){
     stazione * s = (stazione * s) malloc(sizeof(stazione));
     s->kms = km;
-    s->level = lev;
-    s->index = ind;
     //s->vetture = autos;
     return s; 
 }
+int log2(int n){
+    return int(log(n)/log(2));
+}
 void Check(route * r){
-    if(r->len - r-> lastindex < 2)
+    if(r->len - r-> lastindex < 2){
         r->AUTOSTRADA = (stazione *) realloc(sizeof(stazione), r->len * 2);
-}
-void inserimento(route * r, int km/*,rbhead * autos*/){
-    r->lastindex++;
-    AUTOSTRADA[r->lastindex] = initializestazione(km,int((r->lastindex)/8),(r->lastindex) % 8/*,autos*/);
-    Check(r);
-}
-
-void inseriscistazione(route * r, int km, /*,rbhead * autos*/){
-    if(km > r->AUTOSTRADA[r->lastindex]->kms)
-        inserimento(r,km);
-    else
-    {
-        //provare a far bidirezionale? con k = r->lastindex - j
-        //condizione || km > r -> AUTOSTRADA[r->lastindex - j] -> kms 
-        int j = r->lastindex;
-        while (km < r ->AUTOSTRADA[j]->kms /* && r->lastindex - j < j*/)
-            j--;
-        /*controlla questa condizione*/
-        if(!(km > r ->AUTOSTRADA[j]->kms)) //se non si è verificato questo caso. 
-            j = r->lastindex - j; //l'ho raggiunto dal basso. (km >r -> AUTOSTRADA[r->lastindex - j] -> kms)
-        //bisogna cambiare level e index, perché km e vetture devono restare abbinati.
-        //da qua in poi con qualsiasi indice il programma funziona così.
-
-        j++;
-        int tempindex = j;
-        stazione * tmp = (stazione *) malloc(sizeof(stazione));
-        stazione * tmp1 = (stazione *) malloc(sizeof(stazione));
-        tmp1 = r->AUTOSTRADA[j];
-        while (j <= r->lastindex) 
-        { 
-            //l'idea è: trovo indice, cambio coordinate del punto e indice del riferimento. Devo toccare solo array.
-            tmp = r-> AUTOSTRADA[j+1];
-            r->AUTOSTRADA[j+1] = tmp1; //tmp1 ha ref alla posizione j
-            r->AUTOSTRADA[j+1]->level = (int)((j+1)/8);
-            r->AUTOSTRADA[j+1]->index = (j+1)%8; 
-            tmp1 = tmp;//tmp1 ha ref alla posizione j+1 che diventerà nuovo j
-            j++;//qui
-        }
-        r->AUTOSTRADA[tempindex] = initializestazione(km,(int)(tempindex/8), (tempindex)%8/*,autos*/);
-        free(tmp);
-        free(tmp1);
-        r->lastindex ++;
-        Check(r);
+        int i,j;
+        int cells = log2(r->lastindex + 1);
+        for(i = 1; i < cells-1; i++)
+            for(j = 0; j < i; j++)
+                r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
+        r->len *= 2;
     }
 }
-void cancellazione(route * r, int km){
-    //farai
+stazione * binarysearch(route r, int km, int start, int stop){
+    int mid = int((start+stop)/2); //ceiling?
+    if(km == r->AUTOSTRADA[mid]->kms)
+        return pow(2,mid);
+    if(km > r->AUTOSTRADA[mid] ->kms){
+        if(km > r->AUTOSTRADA[mid-1]->kms)
+            return binarysearch(r,km,mid,stop);
+        else if(km == r->AUTOSTRADA[mid-1]->kms)
+            return pow(2,mid-1); //int per pow?
+        else
+        {
+            int i;
+            int nodes = log2(r->lastindex + 1);
+            stazione * curr = r->AUTOSTRADA[mid -1];
+            for(i = 0; i < nodes; i++)
+            {
+                if(curr->kms == km)
+                    return pow(2,mid-1) + i;
+                curr = curr ->next;
+            }
+        }
+    }
+    else if(km < r->AUTOSTRADA[mid+1]->kms){
+        if(km < r->AUTOSTRADA[mid]->kms)
+            return binarysearch(r,km,start,mid);
+        else if(km == r->AUTOSTRADA[mid]->kms)
+            return pow(2,mid);
+        else
+        {
+            int i;
+            int nodes = log2(r->lastindex + 1);
+            stazione * curr = r->AUTOSTRADA[mid];
+            for(i = 0; i < nodes; i++)
+            {
+                if(curr->kms == km)
+                    return pow(2,mid) + i;
+                curr = curr ->next;
+            }
+        }
+    }
 }
 
-
-
-
+//inserimento, come binary search, ma nel for vedi while(curr -> kms < km), poi inserisci.
+//per cancella simile.
 
 //if max(vetture) -> value > stazione1 -> kilometraggio -  stazione -> kilometraggio; ok.
 //alberi rossoneri anche là? può essere idea, perché ti muovi a w sull'albero.
