@@ -5,20 +5,7 @@
 /*
 copia di peso da "rbtree_str.c" purtroppo per il progetto va tutto su un file
 */
-/*
-typedef struct rbhead vettura;
-typedef struct rbhead autostrada;
 
-typedef struct stazione{
-    rbelement * self;
-    vettura * auto;
-}
-
-typedef struct percorso{
-    rbelement * tappa;
-    struct percorso * next;
-}path;
-*/
 typedef struct station 
 {
     int kms;
@@ -54,43 +41,26 @@ int log2(int n){
 }
 void Check(route * r){
     if(r->len - r-> lastindex < 2){
-        r->AUTOSTRADA = (stazione *) realloc(sizeof(stazione), r->len * 2);
+        r->AUTOSTRADA = (stazione **) realloc(sizeof(stazione*), r->len * 2); //raddoppio lunghezza vettore.
         int i,j;
         int cells = log2(r->lastindex + 1);
-        for(i = 1; i < cells-1; i++)
-            for(j = 0; j < i; j++)
+        for(i = 1; i < cells-1; i++) //elemento i-esimo array deve puntare a elemento i posti dopo.
+            for(j = 0; j < i; j++) //n-1+1 elementi in [0], [1] si sposta di 1 in avanti. E così via...
                 r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
         r->len *= 2;
     }
 }
 stazione * binarysearch(route r, int km, int start, int stop){
-    int mid = int((start+stop)/2); //ceiling?
-    if(km == r->AUTOSTRADA[mid]->kms)
-        return pow(2,mid);
-    if(km > r->AUTOSTRADA[mid] ->kms){
-        if(km > r->AUTOSTRADA[mid-1]->kms)
+    int mid = (int)(ceil((start+stop)/2)); 
+    if(km == r->AUTOSTRADA[mid]->kms) //caso ottimo, trovata.
+        return (int)(pow(2,mid));
+    if(km > r->AUTOSTRADA[mid] ->kms) //è nella seconda parte.
+    {
+        if(km > r->AUTOSTRADA[mid+1]->kms) //[mid] è molto lontano da elemento.
             return binarysearch(r,km,mid,stop);
-        else if(km == r->AUTOSTRADA[mid-1]->kms)
-            return pow(2,mid-1); //int per pow?
-        else
-        {
-            int i;
-            int nodes = log2(r->lastindex + 1);
-            stazione * curr = r->AUTOSTRADA[mid -1];
-            for(i = 0; i < nodes; i++)
-            {
-                if(curr->kms == km)
-                    return pow(2,mid-1) + i;
-                curr = curr ->next;
-            }
-        }
-    }
-    else if(km < r->AUTOSTRADA[mid+1]->kms){
-        if(km < r->AUTOSTRADA[mid]->kms)
-            return binarysearch(r,km,start,mid);
-        else if(km == r->AUTOSTRADA[mid]->kms)
-            return pow(2,mid);
-        else
+        else if(km == r->AUTOSTRADA[mid+1]->kms)
+            return (int)(pow(2,mid+1)); //int per pow?
+        else //è tra [mid] e [mid+1]
         {
             int i;
             int nodes = log2(r->lastindex + 1);
@@ -98,13 +68,103 @@ stazione * binarysearch(route r, int km, int start, int stop){
             for(i = 0; i < nodes; i++)
             {
                 if(curr->kms == km)
-                    return pow(2,mid) + i;
+                    return (int)(pow(2,mid)) + i;
                 curr = curr ->next;
             }
+            return NULL; //non c'è
+        }
+    }
+    else if(km < r->AUTOSTRADA[mid]->kms) //prima parte.
+    {
+        if(km < r->AUTOSTRADA[mid-1]->kms)//[mid] è molto lontano da elemento.
+            return binarysearch(r,km,start,mid);
+        else if(km == r->AUTOSTRADA[mid-1]->kms)
+            return (int)(pow(2,mid-1));
+        else //in profondità
+        {
+            int i;
+            int nodes = log2(r->lastindex + 1);
+            stazione * curr = r->AUTOSTRADA[mid-1];
+            for(i = 0; i < nodes; i++)
+            {
+                if(curr->kms == km)
+                    return (int)(pow(2,mid)) + i;
+                curr = curr ->next;
+            }
+            return NULL; //non c'è
+        }
+    }
+}
+void insertion(route r, int km, int index){
+    int i;
+    stazione * curr = r->AUTOSTRADA[index];
+    while(curr -> kms <= km && curr -> next != NULL){
+        if(curr->kms == km){
+            printf("\n Già presente");
+            return;
+        }
+        else
+        {
+            curr = curr ->next;
+        }
+    }
+    stazione * ref = curr -> next; //C <- B
+    curr -> next = initializestazione(km);//B<-new
+    curr ->next->next = ref;//B->next = C;
+    curr ->next->prev = curr;//B->prev = A; mentre C->prev ora è A e C->next resta D;
+    if(ref != NULL) ref ->prev = curr->next;//C->prev = B.
+    r->lastindex++;
+    Check(r);
+}
+void inserimento(route r, int km){
+    int stop = log2(r->lastindex+1);
+    int mid; 
+    int start = 0;
+    if(r->AUTOSTRADA[stop]->kms < km){
+        insertion(r,km,stop);
+    }
+    while (start <= stop)
+    {
+        mid = (int)((start+stop)/2);
+        if(r->AUTOSTRADA[mid]->kms == km){
+            printf("\n Già presente");
+            return;
+        }
+        if(r->AUTOSTRADA[mid]->kms < km)
+        {
+            if(r->AUTOSTRADA[mid+1]->kms > km){
+                insertion(r,km,mid); //tra [mid] e [mid+1]
+                return;
+            }
+            start = mid;
+        }
+        else if(r->AUTOSTRADA[mid]->kms > km){
+            if(r->AUTOSTRADA[mid-1]->kms < km){
+                insertion(r,km,mid-1); //tra [mid-1] e [mid]
+                return;
+            }
+            stop = mid;
         }
     }
 }
 
+void cancella(route r, int km){
+    int index = binarysearch(r,km,0,log2(r->lastindex + 1));
+    if(index == NULL)
+    {
+        return;
+    }
+    int cell = log2(index);
+    stazione * s = r->AUTOSTRADA[cell];
+    while (s->next->kms < km)
+        s = s->next;
+    stazione * A = s->prev;
+    stazione * B = s->next;
+    A->next = B;
+    if(B!=NULL) B->prev = A;
+    free(s);
+    //printf("\n Cancellato"); 
+}
 //inserimento, come binary search, ma nel for vedi while(curr -> kms < km), poi inserisci.
 //per cancella simile.
 
