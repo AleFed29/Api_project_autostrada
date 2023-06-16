@@ -173,7 +173,7 @@ void insertion(route * r, int km, int index){
     if(r->AUTOSTRADA[lastline(r)]->kms < km) //potrei aver inserito nuovo max.
         fixmax(r);
     if(indexbycell(lastline(r))+autolen(r)- r-> lastindex < 3) //controllo lunghezza linea
-        fixline(r);
+        fixline(r);//questo controllo va fatto sulla linea dove inserisci, non l'ultima.
     Check(r);
 }
 void littleinsert(route * r, int km){
