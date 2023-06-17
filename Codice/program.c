@@ -169,9 +169,16 @@ void insertion(route * r, int km, int index){
     curr ->next->next = ref;//B->next = C;
     curr ->next->prev = curr;//B->prev = A; mentre C->prev ora è A e C->next resta D;
     if(ref != NULL) ref ->prev = curr->next;//C->prev = B.
-    r->lastindex++;
     if(r->AUTOSTRADA[lastline(r)]->kms < km) //potrei aver inserito nuovo max.
         fixmax(r);
+       //aggiusto linee
+    int line = cell + 1; //da inserito, faccio scalare di 1 tutti quanti.
+    int last = lastline(r);
+    while (line <= last){
+        r->AUTOSTRADA[line] = r->AUTOSTRADA[line]->prev; //arrivo con uno di anticipo a indice significativo.
+        line++;
+    }
+    r->lastindex++;
     if(indexbycell(lastline(r))+autolen(r)- r-> lastindex < 3) //controllo lunghezza linea
         fixline(r);//questo controllo va fatto sulla linea dove inserisci, non l'ultima.
     Check(r);
