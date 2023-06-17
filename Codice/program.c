@@ -144,22 +144,6 @@ int cercaindice(route* r, int km){
         return seqsearch(r,km);
     return binarysearch(r,km, 0, lastline(r));
 }
-//se inserisco elemento, controlla che io abbia al più autolen(r) elementi e se no aggancia primo elemento di troppo ad indice successivo.
-void fixline(route * r, int km){
-    int len = autolen(r);
-    int cell = lastline(r);
-    stazione * curr = r->AUTOSTRADA[cell];
-    int i = 0;
-    while (i < len)
-    {
-        if(curr ->next == NULL)
-            return;
-        curr = curr -> next;
-        i++;
-    }
-    if(curr->next != NULL) //cell non è ultima cella, perché altrimenti Check avrebbe raddoppiato tutto.
-        r->AUTOSTRADA[cell + 1] = curr;
-}
 void insertion(route * r, int km, int index){
     stazione * curr = profonditainserimento(r,km,index);
     if(curr == NULL)
@@ -179,8 +163,6 @@ void insertion(route * r, int km, int index){
         line++;
     }
     r->lastindex++;
-    if(indexbycell(lastline(r))+autolen(r)- r-> lastindex < 3) //controllo lunghezza linea
-        fixline(r);//questo controllo va fatto sulla linea dove inserisci, non l'ultima.
     Check(r);
 }
 void littleinsert(route * r, int km){
