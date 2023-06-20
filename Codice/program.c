@@ -19,6 +19,8 @@ typedef struct
     int lastindex;
     int len;
 }route;
+//array lungo m, ho log2(m) + 1 nodi per fila.
+//n = mlog2(m) + m => n = m*ln(2m) => e^n = (2m)^m.
 int autolen(route * r){
     return (int)(log2((r->len))) + 1; //numero nodi per fila
 }
@@ -26,7 +28,7 @@ int lastline(route *r){
     return (int)(r->lastindex/autolen(r)); //ultimo indice array con qualcosa dentro.
 }
 int cellbyindex(int index){
-    return (int)(index/autolen(r))
+    return (int)(index/autolen(r));
 }
 int indexbycell(int cell){
     return cell*autolen(r);
@@ -71,10 +73,11 @@ void Check(route * r){
         free(r->AUTOSTRADA);
         r->AUTOSTRADA = new;
         int i,j;
-        int cells = autolen(r);
+        int cells = autolen(r); //devo spostare per L = log2(m) + 1 file.
         for(i = 1; i < cells-1; i++) //elemento i-esimo array deve puntare a elemento i posti dopo.
-            for(j = 0; j < i; j++) //n-1+1 elementi in [0], [1] si sposta di 1 in avanti. E così via...
+            for(j = 0; j < i; j++) //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
                 r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
+        r->AUTOSTRADA[cells] = NULL; //r->AUTOSTRADA[i]->next; la riga L all'inizio ha L elementi, alla fine ne avrà 0. 
         r->len *= 2;
     }
 }
@@ -124,8 +127,8 @@ stazione * profonditainserimento(route * r, int km, int index){
         else
             curr = curr ->next;
     }
-    if(curr->next!= NULL) //se non era ultimo riferimento.
-        curr = curr ->prev;//torno ad ultimo riferimento più piccolo "A" e metto tra A e B.
+    if(curr->next != NULL || curr -> kms > km) //se non era ultimo riferimento o lo era ed è più grande.
+        curr = curr ->prev;//torno ad ultimo riferimento più piccolo "A" e metto tra A e B.            
     return curr;
 }
 int seqsearch(route* r, int km){
@@ -133,14 +136,13 @@ int seqsearch(route* r, int km){
     int cells = lastline(r);
     while (r->AUTOSTRADA[i]->kms < km && i < cells)
         i++;
-    i--;
-    if(r->AUTOSTRADA[cells] == km)
-        return indexbycell(cells);
+    if(r->AUTOSTRADA[i]->kms == km)
+        return indexbycell(i);
     else
-        cercaprof(r,km,i); //cerco nell'ultimo indice che mi dà minore.
+        cercaprof(r,km,i-1); //cerco nell'ultimo indice che mi dà minore.
 }
 int cercaindice(route* r, int km){
-    if(r->lastindex < 9)
+    if(r->lastindex < 9) //se lastindex è 9, ho 10 elementi e almeno le prime 4 righe piene
         return seqsearch(r,km);
     return binarysearch(r,km, 0, lastline(r));
 }
@@ -156,7 +158,7 @@ void insertion(route * r, int km, int index){
     if(r->AUTOSTRADA[lastline(r)]->kms < km) //potrei aver inserito nuovo max.
         fixmax(r);
        //aggiusto linee
-    int line = cell + 1; //da inserito, faccio scalare di 1 tutti quanti.
+    int line = cellbyindex(index) + 1; //da successivo inserito, faccio scalare di 1 tutti quanti.
     int last = lastline(r);
     while (line <= last){
         r->AUTOSTRADA[line] = r->AUTOSTRADA[line]->prev; //arrivo con uno di anticipo a indice significativo.
@@ -234,7 +236,6 @@ void cancella(route * r, int km){
         printf("\n Non c'è.");
         return;
     }
-    int cell = cellbyindex(index);
     stazione * s = r->AUTOSTRADA[cell];
     while (s->next->kms < km)
         s = s->next;
@@ -245,7 +246,7 @@ void cancella(route * r, int km){
     free(s);
     printf("\n Cancellato");
     //aggiusto linee
-    int line = cell + 1; //da cancellato, faccio scalare di 1 tutti quanti.
+    int line = cellbyindex(index) + 1; //da successivo di cancellato, faccio scalare di 1 tutti quanti.
     int last = lastline(r);
     while (line <= last){
         r->AUTOSTRADA[line] = r->AUTOSTRADA[line]->next;
