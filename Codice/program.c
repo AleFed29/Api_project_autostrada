@@ -41,6 +41,14 @@ pint cellbyindex(route*r, int index){ //posso avere index -1
 pint indexbycell(route*r, pint cell){
     return cell*autolen(r);
 }
+pint firstofthelist(route*r){
+    pint cell = cellbyindex(r, r->lastindex);
+    return r->lastindex == indexbycell(r, cell) && r->lastindex > 0; //serve per controllare allocamento.
+}
+pint firstofthelistbyindex(route * r, pint index){
+    pint cell = cellbyindex(r, index);
+    return index == indexbycell(r,cell) && index > 0;
+}
 route * InitializeAUTOSTRADA(pint kms1/*,rbhead * autos*/){
     route * r = (route *) malloc(sizeof(route));
     r->len = 4;
@@ -163,21 +171,35 @@ void insertion(route * r, pint km, pint index){
     stazione * curr = profonditainserimento(r,km,index);
     if(curr == NULL)
         return;
+    
     stazione * ref = curr -> next; //C <- B
     curr -> next = initializestazione(km);//B<-new
     curr ->next->next = ref;//B->next = C;
     curr ->next->prev = curr;//B->prev = A; mentre C->prev ora è A e C->next resta D;
     if(ref != NULL) ref ->prev = curr->next;//C->prev = B.
-    if(r->AUTOSTRADA[lastline(r)]->kms < km) //potrei aver inserito nuovo max.
-        fixmax(r);
-       //aggiusto linee
-    pint line = cellbyindex(r, index) + 1; //da successivo inserito, faccio scalare di 1 tutti quanti.
+    
+    //mi assicuro che il riferimento alla cella sia ok.    
+    if(index > 0)
+        if(r->AUTOSTRADA[index]->kms > km && r->AUTOSTRADA[index]->prev->kms < km)
+            r->AUTOSTRADA[index] = curr ->next; //fino a qui il mio array punta ancora a vecchio posto se sono nel caso in cui tocca una cella.
+
+    pint line = index + 1; //riga successiva ad inserito, faccio scalare di 1 tutti quanti.
     pint last = lastline(r);
     while (line <= last){
         r->AUTOSTRADA[line] = r->AUTOSTRADA[line]->prev; //arrivo con uno di anticipo a indice significativo.
-        line++;
+        line++;   
     }
+    if(r->AUTOSTRADA[last] != NULL)
+        if(r->AUTOSTRADA[last]->kms < km) //potrei aver inserito nuovo max.
+                fixmax(r);
+    //aggiusto linee
     r->lastindex++;
+    if(firstofthelist(r)) //ho inserito nuova testa di lista nell'ultima riga, ed è il massimo.
+    {
+        pint linea = lastline(r);
+        r->AUTOSTRADA[linea] = (stazione*) malloc(sizeof(stazione));
+        r->AUTOSTRADA[linea] = max_stazione(r);
+    }
     Check(r);
 }
 void littleinsert(route * r, pint km){
@@ -257,6 +279,8 @@ void cancella(route * r, pint km){
     stazione * B = s->next;
     A->next = B;
     if(B!=NULL) B->prev = A;
+    if(km == r->AUTOSTRADA[cell]->kms)
+        r->AUTOSTRADA[cell] = r->AUTOSTRADA[cell]->next;
     free(s);
     printf("\n Cancellato");
     //aggiusto linee
