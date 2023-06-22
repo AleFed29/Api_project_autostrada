@@ -27,10 +27,11 @@ typedef struct
     pint lastindex;
     pint len;
 }route;
+#pragma region ParametriStazioni
 //array lungo m, ho log2(m) + 1 nodi per fila.
 //n = mlog2(m) + m => n = m*ln(2m) => e^n = (2m)^m.
 pint autolen(route * r){
-    return Log2((r->len)) + 1; //numero nodi per fila
+    return Log2(r->len) + 1; //numero nodi per fila
 }
 pint lastline(route *r){
     return (pint)(r->lastindex/autolen(r)); //ultimo indice array con qualcosa dentro.
@@ -49,6 +50,8 @@ pint firstofthelistbyindex(route * r, pint index){
     pint cell = cellbyindex(r, index);
     return index == indexbycell(r,cell) && index > 0;
 }
+#pragma endregion
+#pragma region Metodigestionestrutturadati
 route * InitializeAUTOSTRADA(pint kms1/*,rbhead * autos*/){
     route * r = (route *) malloc(sizeof(route));
     r->len = 4;
@@ -90,12 +93,25 @@ void Check(route * r){
         r->AUTOSTRADA = new;
         int i,j;
         pint cells = autolen(r); //devo spostare per L = log2(m) + 1 file.
-        for(i = 1; i < cells-1; i++) //elemento i-esimo array deve puntare a elemento i posti dopo.
+        for(i = 1; i < cells; i++) //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
             for(j = 0; j < i; j++) //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
                 r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
         r->AUTOSTRADA[cells] = NULL; //r->AUTOSTRADA[i]->next; la riga L all'inizio ha L elementi, alla fine ne avrà 0. 
         r->len *= 2;
     }
+}
+#pragma endregion
+#pragma region Ricercastazioni
+void plotline(route *r, pint line){
+    stazione * curr = r->AUTOSTRADA[line];
+    pint end = autolen(r);
+    pint i = 0; 
+    while(i < end){
+        printf("\t %d", curr->kms);
+        curr = curr->next;
+        i++;
+    }
+    printf("\n");
 }
 int cercaprof(route * r, pint km, pint cell){
     int i;
@@ -144,14 +160,30 @@ int seqsearch(route* r, pint km){
         i++;
     if(r->AUTOSTRADA[i]->kms == km)
         return indexbycell(r, i);
-    else
+    else if(i > 0)
         return cercaprof(r,km,i-1); //cerco nell'ultimo indice che mi dà minore.
+    else
+        return cercaprof(r,km,0);
 }
 int cercaindice(route* r, pint km){
     if(r->lastindex < 9) //se lastindex è 9, ho 10 elementi e almeno le prime 4 righe piene
         return seqsearch(r,km);
     return binarysearch(r,km, 0, lastline(r));
 }
+stazione * cerca(route* r, pint km){
+    int index = cercaindice(r,km);
+    if(index == -1)
+        return NULL;
+    pint cell = cellbyindex(r, index);
+    pint prof = index - indexbycell(r, cell);
+    int i;
+    stazione * curr = r->AUTOSTRADA[cell];
+    for(i = 0; i < prof; i++)
+        curr = curr -> next;
+    return curr;
+}
+#pragma endregion
+#pragma region Inserimentostazioni
 stazione * profonditainserimento(route * r, pint km, pint index){
     stazione * curr = r->AUTOSTRADA[index];
     while(curr -> kms <= km && curr -> next != NULL){
@@ -207,13 +239,15 @@ void littleinsert(route * r, pint km){
     int i = 0;
     while (i<cell && r->AUTOSTRADA[i]->kms < km)
         i++;
-    if(r->AUTOSTRADA[i]->kms > km)
+    if(r->AUTOSTRADA[i]->kms > km && i > 0)
         i--;
     insertion(r,km,i);
 }
 void inserimento(route * r, pint km){
-    if(r->lastindex < 9) //qualche fila vuota.
+    if(r->lastindex < 9){ //qualche fila vuota.
         littleinsert(r,km);
+        return;
+    }
     pint mid; 
     pint start = 0;
     pint stop = lastline(r);
@@ -243,18 +277,8 @@ void inserimento(route * r, pint km){
         }
     }
 }
-stazione * cerca(route* r, pint km){
-    int index = cercaindice(r,km);
-    if(index == -1)
-        return NULL;
-    pint cell = cellbyindex(r, index);
-    pint prof = index - indexbycell(r, cell);
-    int i;
-    stazione * curr = r->AUTOSTRADA[cell];
-    for(i = 0; i <= prof; i++)
-        curr = curr -> next;
-    return curr;
-}
+#pragma endregion 
+#pragma region Cancellazionestazioni
 void cancella(route * r, pint km){
     /*stazione * this = cerca(r,km);
     if(this == NULL)
@@ -292,14 +316,16 @@ void cancella(route * r, pint km){
     }
     r->lastindex--;
 }
-
+#pragma endregion
 int main(){
     route * sixtysix = InitializeAUTOSTRADA(100);
+    printf("%d", autolen(sixtysix));
     inserimento(sixtysix, 66);
     inserimento(sixtysix, 100000);
     inserimento(sixtysix, 2);
     inserimento(sixtysix, 200);
     cancella(sixtysix, 100000);
+    plotline(sixtysix,0);
     stazione * s = cerca(sixtysix,2);
     printf("\n %d", s->kms);
     inserimento(sixtysix, 200);
