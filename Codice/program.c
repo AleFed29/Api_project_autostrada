@@ -297,8 +297,11 @@ void cancella(route * r, pint km){
     }
     pint cell = cellbyindex(r,index);
     stazione * s = r->AUTOSTRADA[cell];
-    while (s->next->kms < km)
-        s = s->next;
+    while (s->next != NULL)
+        if(s->next->kms < km)
+            s = s->next;
+        else
+            break;
     stazione * A = s->prev;
     stazione * B = s->next;
     A->next = B;
@@ -317,7 +320,7 @@ void cancella(route * r, pint km){
     r->lastindex--;
 }
 #pragma endregion
-int main(){
+int main(){ //aggiusta inserimenti, devo mantenere ordinato. Aggiusta cancellazioni, non le conta, aggiusta indicizzazioni.
     route * sixtysix = InitializeAUTOSTRADA(100);
     printf("%d", autolen(sixtysix));
     inserimento(sixtysix, 66);
