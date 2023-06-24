@@ -186,35 +186,70 @@ stazione * cerca(route* r, pint km){
 #pragma region Inserimentostazioni
 stazione * profonditainserimento(route * r, pint km, pint index){
     stazione * curr = r->AUTOSTRADA[index];
-    while(curr -> kms <= km && curr -> next != NULL){
-        if(curr->kms == km){
-            printf("\n Già presente");
+    pint len = autolen(r);
+    if(index == 0){
+        if(r->AUTOSTRADA[0]->kms == km){
+                printf("\n Già presente");
+                return NULL;
+        }
+        else if(r->AUTOSTRADA[0]->kms > km){
+            stazione * ref = r->AUTOSTRADA[0];
+            r->AUTOSTRADA[0] = initializestazione(km);
+            r->AUTOSTRADA[0]->prev = ref -> prev;
+            ref ->prev = r->AUTOSTRADA[0];
+            r->AUTOSTRADA[0]->next = ref;
             return NULL;
         }
-        else
-            curr = curr ->next;
     }
-    if(curr->next != NULL || curr -> kms > km) //se non era ultimo riferimento o lo era ed è più grande.
-        curr = curr ->prev;//torno ad ultimo riferimento più piccolo "A" e metto tra A e B.            
-    return curr;
+    if(index != lastline(r)){
+        pint i;
+        for(i = 0;i < len; i++){
+            if(curr->kms == km){
+                printf("\n Già presente");
+                return NULL;
+            }
+            else if(curr -> kms < km)
+                curr = curr ->next;
+            else
+                return curr -> prev; //torno ad ultimo riferimento più piccolo "A" e metto tra A e B.
+        }
+    }
+    else // può non essere completa la lista
+    {
+        while (curr->next != NULL && curr->kms < km)
+            if(curr->kms == km){
+                printf("\n Già presente");
+                return NULL;
+            }
+            else if(curr -> kms < km)
+                curr = curr ->next;
+            else
+                return curr->prev;
+        if(curr -> kms < km)
+            return curr; //è il max.
+        else if(curr->kms == km){
+                printf("\n Già presente");
+                return NULL;
+        }
+        else
+            return curr -> prev;
+    }
 }
-
 void insertion(route * r, pint km, pint index){
     stazione * curr = profonditainserimento(r,km,index);
     if(curr == NULL)
         return;
-    
     stazione * ref = curr -> next; //C <- B
     curr -> next = initializestazione(km);//B<-new
     curr ->next->next = ref;//B->next = C;
     curr ->next->prev = curr;//B->prev = A; mentre C->prev ora è A e C->next resta D;
     if(ref != NULL) ref ->prev = curr->next;//C->prev = B.
-    
+    //sto inserendo in mezzo a due puntatori.
+
     //mi assicuro che il riferimento alla cella sia ok.    
     if(index > 0)
         if(r->AUTOSTRADA[index]->kms > km && r->AUTOSTRADA[index]->prev->kms < km)
             r->AUTOSTRADA[index] = curr ->next; //fino a qui il mio array punta ancora a vecchio posto se sono nel caso in cui tocca una cella.
-
     pint line = index + 1; //riga successiva ad inserito, faccio scalare di 1 tutti quanti.
     pint last = lastline(r);
     while (line <= last){
@@ -236,10 +271,13 @@ void insertion(route * r, pint km, pint index){
 }
 void littleinsert(route * r, pint km){
     pint cell = lastline(r);
-    int i = 0;
-    while (i<cell && r->AUTOSTRADA[i]->kms < km)
+    pint i = 0;
+    while (i <= cell && r->AUTOSTRADA[i]->kms < km)
         i++;
-    if(r->AUTOSTRADA[i]->kms > km && i > 0)
+    if(r->AUTOSTRADA[i]->kms == km)
+        printf("\n Già presente");
+            return;
+    else if(i > 0)
         i--;
     insertion(r,km,i);
 }
@@ -251,11 +289,13 @@ void inserimento(route * r, pint km){
     pint mid; 
     pint start = 0;
     pint stop = lastline(r);
+    if(stop == 0)
+        insertion(r,km,stop);
     if(r->AUTOSTRADA[stop]->kms < km)
         insertion(r,km,stop);
     while (start <= stop)
     {
-        mid = (pint)(ceil((start+stop)/2));
+        mid = (pint)((start+stop)/2); 
         if(r->AUTOSTRADA[mid]->kms == km){
             printf("\n Già presente");
             return;
@@ -268,12 +308,15 @@ void inserimento(route * r, pint km){
             }
             start = mid;
         }
-        else if(r->AUTOSTRADA[mid]->kms > km){
+        else if(r->AUTOSTRADA[mid]->kms > km && mid > 0){
             if(r->AUTOSTRADA[mid-1]->kms < km){
                 insertion(r,km,mid-1); //tra [mid-1] e [mid]
                 return;
             }
             stop = mid;
+        } else if(mid == 0 && stop == 1){
+            if(r->AUTOSTRADA[1]->kms > km && r->AUTOSTRADA[0]->kms < km)
+                insertion(r,km,0); //caso limite se non si verifica questo, già gestito prima del while.
         }
     }
 }
