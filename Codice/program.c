@@ -274,9 +274,10 @@ void littleinsert(route * r, pint km){
     pint i = 0;
     while (i <= cell && r->AUTOSTRADA[i]->kms < km)
         i++;
-    if(r->AUTOSTRADA[i]->kms == km)
+    if(r->AUTOSTRADA[i]->kms == km){
         printf("\n Già presente");
-            return;
+        return;
+    }
     else if(i > 0)
         i--;
     insertion(r,km,i);
