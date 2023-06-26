@@ -52,7 +52,8 @@ pint firstofthelistbyindex(route * r, pint index){
 }
 #pragma endregion
 #pragma region Metodigestionestrutturadati
-route * InitializeAUTOSTRADA(pint kms1/*,rbhead * autos*/){
+void inserimento(route*, pint);
+route * InitializeAUTOSTRADA(/*rbhead * autos*/){
     route * r = (route *) malloc(sizeof(route));
     r->len = 4;
     stazione ** try = (stazione **) malloc(sizeof(stazione*)*4);
@@ -60,7 +61,7 @@ route * InitializeAUTOSTRADA(pint kms1/*,rbhead * autos*/){
     int i;
     for(i=0; i<4; i++)
         r->AUTOSTRADA[i] = (stazione *)malloc(sizeof(stazione*));
-    r-> AUTOSTRADA[0] ->kms = kms1;
+    r-> AUTOSTRADA[0] ->kms = 0;
     r->AUTOSTRADA[0]->next = NULL;
     r->AUTOSTRADA[0]->prev = NULL;
     //r->AUTOSTRADA[0] -> vetture = autos;
@@ -103,21 +104,24 @@ void Check(route * r){
 #pragma endregion
 #pragma region Ricercastazioni
 void plotline(route *r, pint line){
+    if(r->AUTOSTRADA[line] != NULL){
     stazione * curr = r->AUTOSTRADA[line];
     pint end = autolen(r);
     pint i = 0; 
-    while(i < end){
+    while(i < end && curr -> next != NULL){
         printf("\t %d", curr->kms);
         curr = curr->next;
         i++;
     }
+    if(curr->next == NULL )printf("\t %d", curr->kms); //ultimo
     printf("\n");
+    }
 }
 int cercaprof(route * r, pint km, pint cell){
     int i;
     pint nodes = autolen(r);
     stazione * curr = r->AUTOSTRADA[cell];
-    for(i = 0; i < nodes; i++)
+    for(i = 0; i < nodes && curr != NULL; i++)
     {
         if(curr->kms == km)
             return indexbycell(r, cell) + i;
@@ -189,7 +193,7 @@ stazione * profonditainserimento(route * r, pint km, pint index){
     pint len = autolen(r);
     if(index == 0){
         if(r->AUTOSTRADA[0]->kms == km){
-                printf("\n Già presente");
+                printf("\n Già presente una stazione al km %d.\n", km);
                 return NULL;
         }
         else if(r->AUTOSTRADA[0]->kms > km){
@@ -205,7 +209,7 @@ stazione * profonditainserimento(route * r, pint km, pint index){
         pint i;
         for(i = 0;i < len; i++){
             if(curr->kms == km){
-                printf("\n Già presente");
+                printf("\n Già presente una stazione al km %d.\n", km);
                 return NULL;
             }
             else if(curr -> kms < km)
@@ -218,7 +222,7 @@ stazione * profonditainserimento(route * r, pint km, pint index){
     {
         while (curr->next != NULL && curr->kms < km)
             if(curr->kms == km){
-                printf("\n Già presente");
+                printf("\n Già presente una stazione al km %d.\n", km);
                 return NULL;
             }
             else if(curr -> kms < km)
@@ -228,7 +232,7 @@ stazione * profonditainserimento(route * r, pint km, pint index){
         if(curr -> kms < km)
             return curr; //è il max.
         else if(curr->kms == km){
-                printf("\n Già presente");
+                 printf("\n Già presente una stazione al km %d.\n", km);
                 return NULL;
         }
         else
@@ -239,6 +243,15 @@ void insertion(route * r, pint km, pint index){
     stazione * curr = profonditainserimento(r,km,index);
     if(curr == NULL)
         return;
+    if(r->lastindex == 0)
+    {
+        stazione * new = initializestazione(km);
+        r->AUTOSTRADA[0]->next = new;
+        new ->prev = r->AUTOSTRADA[0];
+        r->AUTOSTRADA[0]->prev = new;
+        new ->next = NULL;
+
+    }
     stazione * ref = curr -> next; //C <- B
     curr -> next = initializestazione(km);//B<-new
     curr ->next->next = ref;//B->next = C;
@@ -275,7 +288,7 @@ void littleinsert(route * r, pint km){
     while (i <= cell && r->AUTOSTRADA[i]->kms < km)
         i++;
     if(r->AUTOSTRADA[i]->kms == km){
-        printf("\n Già presente");
+        printf("\n Già presente una stazione al km %d.\n", km);
         return;
     }
     else if(i > 0)
@@ -298,7 +311,7 @@ void inserimento(route * r, pint km){
     {
         mid = (pint)((start+stop)/2); 
         if(r->AUTOSTRADA[mid]->kms == km){
-            printf("\n Già presente");
+            printf("\n Già presente una stazione al km %d.\n", km);
             return;
         }
         if(r->AUTOSTRADA[mid]->kms < km)
@@ -336,7 +349,7 @@ void cancella(route * r, pint km){
     int index = cercaindice(r,km);
     if(index == -1)
     {
-        printf("\n Non c'è.");
+        printf("\n Non c'è una stazione al km %d.\n", km);
         return;
     }
     pint cell = cellbyindex(r,index);
@@ -365,8 +378,9 @@ void cancella(route * r, pint km){
 }
 #pragma endregion
 int main(){ //aggiusta inserimenti, devo mantenere ordinato. Aggiusta cancellazioni, non le conta, aggiusta indicizzazioni.
-    route * sixtysix = InitializeAUTOSTRADA(100);
+    route * sixtysix = InitializeAUTOSTRADA();
     printf("%d", autolen(sixtysix));
+    inserimento(sixtysix, 100);
     inserimento(sixtysix, 66);
     inserimento(sixtysix, 100000);
     inserimento(sixtysix, 2);
