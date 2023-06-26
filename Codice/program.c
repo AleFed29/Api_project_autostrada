@@ -104,10 +104,11 @@ void Check(route * r){
 #pragma endregion
 #pragma region Ricercastazioni
 void plotline(route *r, pint line){
-    if(r->AUTOSTRADA[line] != NULL){
+    if(r->AUTOSTRADA[line] != NULL && lastline(r)>=line){
     stazione * curr = r->AUTOSTRADA[line];
     pint end = autolen(r);
     pint i = 0; 
+    printf("\n%d: ", line);
     while(i < end && curr -> next != NULL){
         printf("\t %d", curr->kms);
         curr = curr->next;
@@ -115,6 +116,9 @@ void plotline(route *r, pint line){
     }
     if(curr->next == NULL )printf("\t %d", curr->kms); //ultimo
     printf("\n");
+    }
+    else{
+        printf("\n\tRiga %d non esistente.\n", line);
     }
 }
 int cercaprof(route * r, pint km, pint cell){
@@ -160,7 +164,7 @@ int binarysearch(route * r, pint km, pint start, pint stop){
 int seqsearch(route* r, pint km){
     int i = 0;
     int cells = lastline(r);
-    while (r->AUTOSTRADA[i]->kms < km && i < cells)
+    while (r->AUTOSTRADA[i]->kms < km && i <= cells)
         i++;
     if(r->AUTOSTRADA[i]->kms == km)
         return indexbycell(r, i);
@@ -355,7 +359,7 @@ void cancella(route * r, pint km){
     pint cell = cellbyindex(r,index);
     stazione * s = r->AUTOSTRADA[cell];
     while (s->next != NULL)
-        if(s->next->kms < km)
+        if(s->kms < km)
             s = s->next;
         else
             break;
@@ -366,7 +370,7 @@ void cancella(route * r, pint km){
     if(km == r->AUTOSTRADA[cell]->kms)
         r->AUTOSTRADA[cell] = r->AUTOSTRADA[cell]->next;
     free(s);
-    printf("\n Cancellato");
+    printf("\n Cancellata stazione al km %d.", km);
     //aggiusto linee
     int line = cellbyindex(r, index) + 1; //da successivo di cancellato, faccio scalare di 1 tutti quanti.
     int last = lastline(r);
@@ -387,10 +391,17 @@ int main(){ //aggiusta inserimenti, devo mantenere ordinato. Aggiusta cancellazi
     inserimento(sixtysix, 200);
     cancella(sixtysix, 100000);
     plotline(sixtysix,0);
+    plotline(sixtysix, 1);
+    plotline(sixtysix, 2);
+    printf("%d", sixtysix->lastindex);
     stazione * s = cerca(sixtysix,2);
     printf("\n %d", s->kms);
+    pint i;
+    for(i = 1; i < 100;i++)
+        inserimento(sixtysix, 200+3*i);
     inserimento(sixtysix, 200);
     cancella(sixtysix, 3);
+    printf("%d", sixtysix->lastindex);
 }
 
 
