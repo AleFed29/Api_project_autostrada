@@ -254,14 +254,23 @@ void insertion(route * r, pint km, pint index){
         new ->prev = r->AUTOSTRADA[0];
         r->AUTOSTRADA[0]->prev = new;
         new ->next = NULL;
-
     }
-    stazione * ref = curr -> next; //C <- B
-    curr -> next = initializestazione(km);//B<-new
-    curr ->next->next = ref;//B->next = C;
-    curr ->next->prev = curr;//B->prev = A; mentre C->prev ora è A e C->next resta D;
-    if(ref != NULL) ref ->prev = curr->next;//C->prev = B.
-    //sto inserendo in mezzo a due puntatori.
+    if(curr ->next == NULL) //inserisco ultimo
+    {
+        stazione * new = initializestazione(km);
+        curr->next = new;
+        new ->prev = curr;
+        fixmax(r);
+    } 
+    else
+    {
+        stazione * ref = curr -> next; //C <- B
+        curr -> next = initializestazione(km);//B<-new
+        curr ->next->next = ref;//B->next = C;
+        curr ->next->prev = curr;//B->prev = A; mentre C->prev ora è A e C->next resta D;
+        if(ref != NULL) ref ->prev = curr->next;//C->prev = B.
+        //sto inserendo in mezzo a due puntatori.
+    }
 
     //mi assicuro che il riferimento alla cella sia ok.    
     if(index > 0)
@@ -313,6 +322,22 @@ void inserimento(route * r, pint km){
         insertion(r,km,stop);
     while (start <= stop)
     {
+        if(start == stop - 1)
+            if(r->AUTOSTRADA[start]->kms < km)
+                if(r->AUTOSTRADA[stop]->kms == km)
+                {
+                printf("\n Già presente una stazione al km %d.\n", km);
+                return;
+                }
+                else if(r->AUTOSTRADA[stop]->kms < km)
+                    insertion(r,km,start);
+                else insertion(r,km,stop);
+            else if(r->AUTOSTRADA[start]->kms == km)
+            {
+                printf("\n Già presente una stazione al km %d.\n", km);
+                return;
+            }
+
         mid = (pint)((start+stop)/2); 
         if(r->AUTOSTRADA[mid]->kms == km){
             printf("\n Già presente una stazione al km %d.\n", km);
