@@ -66,8 +66,10 @@ rbelement * extreme_value_byroot(rbelement * ref, int minzero_maxone, rbtail* en
     return cur;
 }
 //se verso = 1 prendo successore, se verso è -1 prendo predecessore.
-rbelement * adiacente(rbelement * ref, int verso, rbtail * end){
+rbelement * adiacente(rbhead*h,rbelement * ref, int verso, rbtail * end){
     verso = (verso + 1)/2; //0 se -1, 1 se 1.
+    if(ref == extreme_value_byroot(h->root, verso, end))
+        return end->NIL;
     if(ref ->children[verso] != end -> NIL)
         return extreme_value_byroot(ref->children[verso], 1-verso,end); //minimo di right se successore, massimo di left se predecessore.
     rbelement * cur = ref->father;
@@ -90,10 +92,10 @@ rbelement * min(rbhead * ref){
     return extreme_value_byroot(ref->root, 0, ref->treetail);
 }
 rbelement * successore(rbhead * head, rbelement * elem){
-    return adiacente(elem,1, head->treetail);
+    return adiacente(head,elem,1, head->treetail);
 }
 rbelement * predecessore(rbhead * head, rbelement * elem){
-    return adiacente(elem,-1, head->treetail);
+    return adiacente(head, elem,-1, head->treetail);
 }
 //da controllare
 // se verso è -1, il senso è orario (right); se verso è 1, il senso è antiorario (left)
@@ -168,87 +170,49 @@ void insert(rbhead*ref, int x, rbtail*end){
     rbelement * t = construct_tree(x,NULL, rc);//fai metodo costruttore.
     inseriscielemento(ref, t,end); //prova a vedere
 }
-void RiparaRbCancella(rbhead*ref, rbelement * sostituto){
-    if(sostituto ->color == 1)
-        sostituto ->color = 0;
-    else //sostituto è nero.
+void fixcancel(rbhead * ref, rbelement * x, int isright, rbtail *end){
+    rbelement * w = x->father->children[isright];
+    if(w->color == 1)
     {
-        int index;
-        if(sostituto == sostituto->father->children[0])
-            index = 1;//sostituto è figlio sx, fratello dx.
-        else
-            index = 0;//sostituto è figlio dx, fratello sx.
-        if(sostituto->father->children[index]->color == 1) //fratello rosso, papà nero, scambio colori
-        {
-            byte c = sostituto ->father ->color;
-            sostituto ->father->color = sostituto->father->children[index]->color;
-            sostituto->father->children[index]->color = c;
-            rotate(ref, sostituto->father,(2*index - 1) ,ref ->treetail); //leftrotate se fratello è figlio dx, rightrotate se fratello è figlio sx.
+        w->color = 0;
+        x->father->color = 1;
+        rotate(ref,x->father,2*isright-1,end); //left se è destro (1), right se è sx.
+        w = x->father->children[isright];
+    }
+    if(w->children[isright]->color == 0 && w->children[1-isright]->color == 0)
+    {
+        w->color = 1;
+        x = x->father;
+    }
+    else
+    { 
+        if(w->children[isright]->color == 0){
+            w->children[1-isright] = 0;
+            w->color = 1;
+            rotate(ref,w,1-(2*isright),end); //right rotate se right, left se left.
+            w = x->father->children[isright];
         }
-        else //entrambi figli neri, casi 2,3,4
-        {
-            if(sostituto->father->children[index]->children[0]->color == 0 && sostituto->father->children[index]->children[1]->color == 0) //nipoti entrambi neri.
-            {
-                sostituto->father->children[index] -> color = 1; //fratello rosso
-                RiparaRbCancella(ref, sostituto ->father); //chiamo RbCancella su padre e salgo di livello.
-            }
-            else //uno dei due nipoti è rosso
-            {
-                if(sostituto->father->children[index]->children[1]->color == 1) //nipote dx rosso, caso 3
-                {
-                    sostituto->father->children[index]->color = sostituto ->father->color;
-                    sostituto->father->children[index]->children[1]->color = 0;   
-                    rotate(ref,sostituto ->father,1,ref -> treetail); //leftrotate sul papà.            
-                }
-                else //nipote sx è rosso, allora caso 3
-                {
-                    byte c = sostituto ->father->children[index] -> color;
-                    sostituto ->father->children[index] -> color = sostituto->father->children[index]->children[0]->color;
-                    sostituto->father->children[index]->children[0]->color = c;
-                    //scambio colore di fratello e nipote sx.
-                    //rightrotate fratello.
-                    rotate(ref, sostituto ->father->children[index], -1, ref ->treetail);
-                }
-            }
-        }
-        
-        /*if(sostituto == sostituto->father->children[0]){ //sostituto è figlio sx, fratello dx.
-            if(sostituto->father->children[1]->color == 1) //fratello rosso, papà nero, scambio colori
-            {
-                byte c = sostituto ->father ->color;
-                sostituto ->father->color = sostituto->father->children[1]->color;
-                sostituto->father->children[0]->color = c;
-                rotate(ref, sostituto->father,1,ref ->treetail); //leftrotate.  
-            }
-            else //entrambi figli neri, casi 2,3,4
-            {
-                if(sostituto->father->children[1]->children[0]->color == 0 && sostituto->father->children[1]->children[1]->color == 0)
-                {
-                    sostituto->father->children[1] = 1;
-                    RiparaRbCancella(ref, sostituto ->father);
-                }
-            }
-        }
-        else //sostituto è figlio dx, fratello sx.
-        {
-            if(sostituto->father->children[0]->color == 1)//fratello rosso, papà nero, scambio colori
-            {
-                byte c = sostituto ->father ->color;
-                sostituto ->father->color = sostituto->father->children[0]->color;
-                sostituto->father->children[0]->color = c;
-                rotate(ref, sostituto->father,-1,ref ->treetail); //rightrotate.  
-            }
-            else //entrambi figli neri, casi 2,3,4
-            {
-                if(sostituto->father->children[0]->children[0]->color == 0 && sostituto->father->children[1]->children[1]->color == 0)
-                {
-                    sostituto->father->children[0] = 1;
-                    RiparaRbCancella(ref, sostituto ->father);
-                }
-            }
-        }*/
+        w->color = x->father->color;
+        x->father->color = 0;
+        w->children[isright]->color = 0;
+        rotate(ref,x->father, 2*isright-1,end); 
+        x = ref->root;
     }
 }
+
+void RiparaRbCancella(rbhead*ref, rbelement * sostituto, rbtail*end){
+    int index;
+    while (sostituto != ref->root && sostituto ->color != 0)
+    {
+        if(sostituto == sostituto ->father->children[0])
+            index = 1;
+        else
+            index = 0;
+        fixcancel(ref,sostituto,index,end);
+    }
+    sostituto ->color = 0;    
+}
+
 void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
     rbelement * da_canc/*=(rbelement*)malloc(sizeof(rbelement))*/;
     rbelement * sottoa/*=(rbelement*)malloc(sizeof(rbelement))*/;
@@ -259,8 +223,10 @@ void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
     //individuano sottoalbero da spostare e spostano riferimento a padre.
     if(da_canc->children[0] != end -> NIL)
         sottoa = da_canc->children[0];
-    else
+    else if(da_canc->children[1] != end -> NIL)
         sottoa = da_canc->children[1];
+    else
+        sottoa = da_canc;
     if(sottoa != end -> NIL)
         sottoa->father = da_canc ->father;
     //correzione riferimento a padre.
@@ -274,9 +240,28 @@ void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
     if(da_canc != cancel)
         cancel ->value = da_canc ->value;
     free(da_canc);
-    RiparaRbCancella(ref,sottoa); //sottoa ha preso il posto di da_canc, non deve violare norme alberi rossoneri.
+    RiparaRbCancella(ref,sottoa, end); //sottoa ha preso il posto di da_canc, non deve violare norme alberi rossoneri.
+}
+void cancella(rbhead*h,int key){
+    rbelement * element = search(h,key);
+    if(element != NULL){
+        cancellaelemento(h,element,h->treetail);
+        printf("\n%d", element->value);
+        element ->value = -1;
+        //free(element); SIGABORT capisci perché questo elemento senza padre e senza figli viene intercettato da successore.
+    }
 }
 
+void plot(rbhead * h){
+    rbelement* s = min(h);
+    printf("\n");
+    while(s != NULL)
+    {
+        printf("\t%d", s->value);
+        s = successore(h,s);
+    }
+    printf("\n");
+}
 
 int main()
 {
@@ -307,10 +292,11 @@ int main()
     printf("\n %d", tre -> value); //esce 3
     rbelement * due = predecessore(h,tre);
     printf("\n %d", due -> value);//esce 2
-    rbelement * undici = search(h, 11);
-    cancellaelemento(h, undici, h->treetail);
+    plot(h);
+    cancella(h,11);
     rbelement * pensoundicinoncisiapiu = search(h,11);
     if(pensoundicinoncisiapiu == NULL)
         printf("\n 11 cancellato");
+    plot(h);
     return 0;
 }
