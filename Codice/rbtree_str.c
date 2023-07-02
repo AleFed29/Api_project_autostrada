@@ -80,26 +80,9 @@ rbelement * adiacente(rbhead*h,rbelement * ref, int verso, rbtail * end){
     }
     return cur;
 } 
-#pragma endregion
-
-rbelement * search(rbhead*ref, int x){
-    return searchelem(ref ->root,x, ref->treetail);
-}
-rbelement * max(rbhead * ref){
-    return extreme_value_byroot(ref->root, 1, ref->treetail);
-}
-rbelement * min(rbhead * ref){
-    return extreme_value_byroot(ref->root, 0, ref->treetail);
-}
-rbelement * successore(rbhead * head, rbelement * elem){
-    return adiacente(head,elem,1, head->treetail);
-}
-rbelement * predecessore(rbhead * head, rbelement * elem){
-    return adiacente(head, elem,-1, head->treetail);
-}
 //da controllare
 // se verso è -1, il senso è orario (right); se verso è 1, il senso è antiorario (left)
-rbelement * rotate(rbhead * ref, rbelement * ruotato, int verso, rbtail * end){
+void rotate(rbhead * ref, rbelement * ruotato, int verso, rbtail * end){
     verso = (verso + 1)/2; //0 se -1, 1 se 1.
     rbelement * cur = ruotato ->children[verso]; //deve essere scambiato con ruotato.
     ruotato->children[verso] = cur->children[1-verso];//'ruoto' figlio verso opposto.
@@ -116,7 +99,7 @@ rbelement * rotate(rbhead * ref, rbelement * ruotato, int verso, rbtail * end){
 }
 //fixing figlio sinistro se isright è 0, destro se isright è 1.
 void fix(rbhead *ref, rbelement * inserito,int isright){
-    rbelement * y = inserito ->father->father->children[isright];
+    rbelement * y = inserito ->father->father->children[isright]; //metto lo zio
     if(y->color == 1)
     {
         inserito->father->color = 0;
@@ -128,8 +111,8 @@ void fix(rbhead *ref, rbelement * inserito,int isright){
     {
         if(inserito == inserito->father->children[isright])
         {
-        inserito = inserito->father;
-        rotate(ref,inserito,1, ref ->treetail);
+            inserito = inserito->father;
+            rotate(ref,inserito,1, ref ->treetail);
         }
         inserito ->father->color = 0;
         inserito ->father->father ->color = 1;
@@ -165,44 +148,91 @@ void inseriscielemento(rbhead*ref, rbelement*insert, rbtail*end){
     else precedente -> children[1] = insert; //figlio destro ordino come BST.
     RiparaRbInserisci(ref,insert);
 }
-void insert(rbhead*ref, int x, rbtail*end){
-    rbchildren rc [2] = {end->NIL,end->NIL};
-    rbelement * t = construct_tree(x,NULL, rc);//fai metodo costruttore.
-    inseriscielemento(ref, t,end); //prova a vedere
+void rotateandchangecolor(rbhead * ref, rbelement * ruotato, int indice, rbtail*end){
+    byte temp = ruotato ->color;
+    ruotato ->color = ruotato->children[indice]->color;
+    ruotato->children[indice]->color = temp;
+    rotate(ref,ruotato,2*indice-1,end);
 }
 void fixcancel(rbhead * ref, rbelement * x, int isright, rbtail *end){
-    rbelement * w = x->father->children[isright];
-    if(w->color == 1)
-    {
-        w->color = 0;
-        x->father->color = 1;
-        rotate(ref,x->father,2*isright-1,end); //left se è destro (1), right se è sx.
-        w = x->father->children[isright];
-    }
-    if(w->children[isright]->color == 0 && w->children[1-isright]->color == 0)
-    {
-        w->color = 1;
+    rbelement * w = x->father->children[isright]; //fratello
+    if(w == end->NIL) //senza fratello
         x = x->father;
-    }
-    else
-    { 
-        if(w->children[isright]->color == 0){
-            w->children[1-isright] = 0;
-            w->color = 1;
-            rotate(ref,w,1-(2*isright),end); //right rotate se right, left se left.
+    else{
+        if(w->color == 1)
+        {
+            w->color = 0;
+            x->father->color = 1;
+            rotate(ref,x->father,2*isright-1,end); //left se è destro (1), right se è sx.
             w = x->father->children[isright];
         }
-        w->color = x->father->color;
-        x->father->color = 0;
-        w->children[isright]->color = 0;
-        rotate(ref,x->father, 2*isright-1,end); 
-        x = ref->root;
+        //se w è foglia, con lo pseudocodice hai figli neri, qui va gestito.
+        if(w->children[isright] == end->NIL || w->children[1-isright] == end->NIL) //foglia
+        {
+            if(w ->children[isright] == end->NIL && w->children[1-isright] == end->NIL)
+            {
+                //end->NIL considerato nero.
+                w->color = 1;
+                x = x->father;
+            }
+            else
+            { 
+                if(w->children[isright] != end->NIL){
+                //ho solo un figlio, e l'altro è NIL
+                    if(w->children[isright]->color == 0)
+                    {   
+                        w->color = 1;
+                        x = x->father;
+                    }
+                    else
+                    {
+                        w ->color = w->father->color; //w->father esiste, w fratello di x.
+                        w->children[isright]->color = 0;
+                    }
+                }
+                else
+                {
+                    if(w->children[1-isright]->color == 0)
+                    {   
+                        w->color = 1;
+                        x = x->father;
+                    }
+                    else
+                    {
+                        w ->color = w->father->color; //w->father esiste, w fratello di x.
+                        w->children[1-isright]->color = 0;
+                    }
+                }
+            }
+        }
+        else //w non foglia
+        {
+            //codice restante
+            if(w->children[isright]->color == 0 && w->children[1-isright]->color == 0)
+            {
+                w->color = 1;
+                x = x->father;
+            }
+            else
+            { 
+                if(w->children[isright]->color == 0){
+                    w->children[1-isright] = 0;
+                    w->color = 1;
+                    rotate(ref,w,1-(2*isright),end); //right rotate se right, left se left.
+                    w = x->father->children[isright];
+                }
+                w->color = x->father->color;
+                x->father->color = 0;
+                w->children[isright]->color = 0;
+                rotate(ref,x->father, 2*isright-1,end); 
+                x = ref->root;
+            }
+        }
     }
 }
-
 void RiparaRbCancella(rbhead*ref, rbelement * sostituto, rbtail*end){
     int index;
-    while (sostituto != ref->root && sostituto ->color != 0)
+    while (sostituto != ref->root && sostituto ->color == 0)
     {
         if(sostituto == sostituto ->father->children[0])
             index = 1;
@@ -212,33 +242,75 @@ void RiparaRbCancella(rbhead*ref, rbelement * sostituto, rbtail*end){
     }
     sostituto ->color = 0;    
 }
+#pragma endregion
+
+rbelement * search(rbhead*ref, int x){
+    return searchelem(ref ->root,x, ref->treetail);
+}
+rbelement * max(rbhead * ref){
+    return extreme_value_byroot(ref->root, 1, ref->treetail);
+}
+rbelement * min(rbhead * ref){
+    return extreme_value_byroot(ref->root, 0, ref->treetail);
+}
+rbelement * successore(rbhead * head, rbelement * elem){
+    return adiacente(head,elem,1, head->treetail);
+}
+rbelement * predecessore(rbhead * head, rbelement * elem){
+    return adiacente(head, elem,-1, head->treetail);
+}
+void insert(rbhead*ref, int x, rbtail*end){
+    rbchildren rc [2] = {end->NIL,end->NIL};
+    rbelement * t = construct_tree(x,NULL, rc);//fai metodo costruttore.
+    inseriscielemento(ref, t,end); //prova a vedere
+}
 
 void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
-    rbelement * da_canc/*=(rbelement*)malloc(sizeof(rbelement))*/;
-    rbelement * sottoa/*=(rbelement*)malloc(sizeof(rbelement))*/;
+    rbelement * da_canc;
+    rbelement * sottoa;
     //individuo nodo da cancellare.
     if(cancel -> children[0] == end -> NIL || cancel ->children[1] == end -> NIL)
         da_canc = cancel;
-    else da_canc = successore(ref,cancel);
+    else da_canc = successore(ref,cancel); //elemento ha due figli
     //individuano sottoalbero da spostare e spostano riferimento a padre.
     if(da_canc->children[0] != end -> NIL)
         sottoa = da_canc->children[0];
     else if(da_canc->children[1] != end -> NIL)
         sottoa = da_canc->children[1];
-    else
-        sottoa = da_canc;
+    else 
+        sottoa = end->NIL; //questa riga mi salva dal segfault. sottoa non inizializzato...
     if(sottoa != end -> NIL)
         sottoa->father = da_canc ->father;
     //correzione riferimento a padre.
-    if(da_canc ->father == end -> NIL){
+    if(da_canc ->father == end -> NIL)
         ref->root = sottoa;
-    }
-    else if(da_canc == da_canc ->father->children[0])
-        da_canc ->father->children[0] = sottoa;
-    else da_canc ->father->children[1] = sottoa;
+    else
+        if(da_canc == da_canc ->father->children[0])
+            da_canc ->father->children[0] = sottoa;
+        else 
+            da_canc ->father->children[1] = sottoa;
     //copiatura valore chiave.
     if(da_canc != cancel)
         cancel ->value = da_canc ->value;
+    
+    if(sottoa == end->NIL){
+        if(da_canc ->father != end->NIL)
+        {
+            int ind;
+            if(da_canc ->father ->children[0] == end->NIL && da_canc->father->children[1] ==  end->NIL)
+                sottoa = da_canc ->father; //passo induttivo della RBriparacancella
+            else
+            {
+                if(da_canc ->father ->children[0] == sottoa) //immagino che foglia sinistra sia cancellata. 
+                    //ruoto papà a sinistra, così mantengo BTS e scambio colori, che erano già giusti.
+                    ind = 1;
+                else//lo stesso, ma con foglia destra e giro sinistro (tutto perché end.NIL non doveva avere riferimenti a padri)
+                    ind = 0;
+                rotateandchangecolor(ref,da_canc ->father, ind,end);
+                sottoa = da_canc ->father->children[ind]; //nuovo papà, passo induttivo rbriparacancella.
+            }
+        }
+    }
     free(da_canc);
     RiparaRbCancella(ref,sottoa, end); //sottoa ha preso il posto di da_canc, non deve violare norme alberi rossoneri.
 }
