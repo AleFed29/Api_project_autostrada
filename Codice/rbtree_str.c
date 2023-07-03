@@ -148,6 +148,15 @@ void inseriscielemento(rbhead*ref, rbelement*insert, rbtail*end){
     else precedente -> children[1] = insert; //figlio destro ordino come BST.
     RiparaRbInserisci(ref,insert);
 }
+int Whoisnotnull(rbelement * ref){
+    if(ref -> children[0] == NULL && ref->children[1] == NULL)
+        return -1;
+    if(ref -> children[0] == NULL)
+        return 1;
+    if(ref -> children[1] == NULL)
+        return 0;
+    return 2;
+} 
 void rotateandchangecolor(rbhead * ref, rbelement * ruotato, int indice, rbtail*end){
     byte temp = ruotato ->color;
     ruotato ->color = ruotato->children[indice]->color;
@@ -155,7 +164,13 @@ void rotateandchangecolor(rbhead * ref, rbelement * ruotato, int indice, rbtail*
     rotate(ref,ruotato,2*indice-1,end);
 }
 void fixcancel(rbhead * ref, rbelement * x, int isright, rbtail *end){
+    if(x == ref->root)
+    {
+        x->color = 0;
+        return;
+    }
     rbelement * w = x->father->children[isright]; //fratello
+    
     if(w == end->NIL) //senza fratello
         x = x->father;
     else{
@@ -166,10 +181,11 @@ void fixcancel(rbhead * ref, rbelement * x, int isright, rbtail *end){
             rotate(ref,x->father,2*isright-1,end); //left se è destro (1), right se è sx.
             w = x->father->children[isright];
         }
+        int discr = Whoisnotnull(w);
         //se w è foglia, con lo pseudocodice hai figli neri, qui va gestito.
-        if(w->children[isright] == end->NIL || w->children[1-isright] == end->NIL) //foglia
+        if(discr < 2) //può essere foglia
         {
-            if(w ->children[isright] == end->NIL && w->children[1-isright] == end->NIL)
+            if(discr == -1) //no figli
             {
                 //end->NIL considerato nero.
                 w->color = 1;
@@ -177,7 +193,7 @@ void fixcancel(rbhead * ref, rbelement * x, int isright, rbtail *end){
             }
             else
             { 
-                if(w->children[isright] != end->NIL){
+                if(isright == discr){
                 //ho solo un figlio, e l'altro è NIL
                     if(w->children[isright]->color == 0)
                     {   
@@ -205,7 +221,7 @@ void fixcancel(rbhead * ref, rbelement * x, int isright, rbtail *end){
                 }
             }
         }
-        else //w non foglia
+        else //w ha due figli
         {
             //codice restante
             if(w->children[isright]->color == 0 && w->children[1-isright]->color == 0)
@@ -231,6 +247,8 @@ void fixcancel(rbhead * ref, rbelement * x, int isright, rbtail *end){
     }
 }
 void RiparaRbCancella(rbhead*ref, rbelement * sostituto, rbtail*end){
+    if(sostituto == NULL)
+        return; //pensa ad un codice, ho eliminato foglia
     int index;
     while (sostituto != ref->root && sostituto ->color == 0)
     {
@@ -292,25 +310,7 @@ void cancellaelemento(rbhead * ref, rbelement *cancel, rbtail*end){
     //copiatura valore chiave.
     if(da_canc != cancel)
         cancel ->value = da_canc ->value;
-    
-    if(sottoa == end->NIL){
-        if(da_canc ->father != end->NIL)
-        {
-            int ind;
-            if(da_canc ->father ->children[0] == end->NIL && da_canc->father->children[1] ==  end->NIL)
-                sottoa = da_canc ->father; //passo induttivo della RBriparacancella
-            else
-            {
-                if(da_canc ->father ->children[0] == sottoa) //immagino che foglia sinistra sia cancellata. 
-                    //ruoto papà a sinistra, così mantengo BTS e scambio colori, che erano già giusti.
-                    ind = 1;
-                else//lo stesso, ma con foglia destra e giro sinistro (tutto perché end.NIL non doveva avere riferimenti a padri)
-                    ind = 0;
-                rotateandchangecolor(ref,da_canc ->father, ind,end);
-                sottoa = da_canc ->father->children[ind]; //nuovo papà, passo induttivo rbriparacancella.
-            }
-        }
-    }
+    //disposizione RBT deve garantirmi che esiste almeno un fratello se sottoa non è diventato root.
     free(da_canc);
     RiparaRbCancella(ref,sottoa, end); //sottoa ha preso il posto di da_canc, non deve violare norme alberi rossoneri.
 }
