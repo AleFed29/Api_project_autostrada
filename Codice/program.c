@@ -61,7 +61,7 @@ route * InitializeAUTOSTRADA(/*rbhead * autos*/){
     int i;
     for(i=0; i<4; i++)
         r->AUTOSTRADA[i] = (stazione *)malloc(sizeof(stazione*));
-    r-> AUTOSTRADA[0] ->kms = 0;
+    r-> AUTOSTRADA[0] ->kms = 0;//aggiusta
     r->AUTOSTRADA[0]->next = NULL;
     r->AUTOSTRADA[0]->prev = NULL;
     //r->AUTOSTRADA[0] -> vetture = autos;
@@ -135,7 +135,7 @@ int cercaprof(route * r, pint km, pint cell){
 }
 int binarysearch(route * r, pint km, pint start, pint stop){
     pint mid;  
-    while (start <= stop)
+    while (start < stop)
     {
         mid = (pint)(ceil((start+stop)/2));
         if(km == r->AUTOSTRADA[mid]->kms) //caso ottimo, trovata.
@@ -197,8 +197,8 @@ stazione * profonditainserimento(route * r, pint km, pint index){
     pint len = autolen(r);
     if(index == 0){
         if(r->AUTOSTRADA[0]->kms == km){
-                printf("\n Già presente una stazione al km %d.\n", km);
-                return NULL;
+            printf("\n Già presente una stazione al km %d.\n", km);
+            return NULL;
         }
         else if(r->AUTOSTRADA[0]->kms > km){
             stazione * ref = r->AUTOSTRADA[0];
@@ -320,7 +320,7 @@ void inserimento(route * r, pint km){
         insertion(r,km,stop);
     if(r->AUTOSTRADA[stop]->kms < km)
         insertion(r,km,stop);
-    while (start <= stop)
+    while (start < stop)
     {
         if(start == stop - 1)
             if(r->AUTOSTRADA[start]->kms < km)
