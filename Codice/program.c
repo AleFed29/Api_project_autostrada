@@ -53,7 +53,7 @@ pint firstofthelistbyindex(route * r, pint index){
 #pragma endregion
 #pragma region Metodigestionestrutturadati
 void inserimento(route*, pint);
-route * InitializeAUTOSTRADA(/*rbhead * autos*/){
+route * InitializeAUTOSTRADA(pint km/*, rbhead * autos*/){
     route * r = (route *) malloc(sizeof(route));
     r->len = 4;
     stazione ** try = (stazione **) malloc(sizeof(stazione*)*4);
@@ -61,7 +61,7 @@ route * InitializeAUTOSTRADA(/*rbhead * autos*/){
     int i;
     for(i=0; i<4; i++)
         r->AUTOSTRADA[i] = (stazione *)malloc(sizeof(stazione*));
-    r-> AUTOSTRADA[0] ->kms = 0;//aggiusta
+    r-> AUTOSTRADA[0] ->kms = km;//aggiusta
     r->AUTOSTRADA[0]->next = NULL;
     r->AUTOSTRADA[0]->prev = NULL;
     //r->AUTOSTRADA[0] -> vetture = autos;
@@ -114,7 +114,7 @@ void plotline(route *r, pint line){
         curr = curr->next;
         i++;
     }
-    if(curr->next == NULL )printf("\t %d", curr->kms); //ultimo
+    if(curr->next == NULL) printf("\t %d", curr->kms); //ultimo
     printf("\n");
     }
     else{
@@ -206,6 +206,20 @@ stazione * profonditainserimento(route * r, pint km, pint index){
             r->AUTOSTRADA[0]->prev = ref -> prev;
             ref ->prev = r->AUTOSTRADA[0];
             r->AUTOSTRADA[0]->next = ref;
+            r->lastindex++;
+            pint i;
+            pint last = lastline(r);
+            for(i = 1; i < last;i++)
+                r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->prev;
+            if(r->AUTOSTRADA[last] == NULL)
+            {
+                r->AUTOSTRADA[last] = (stazione*) malloc(sizeof(stazione));
+                r->AUTOSTRADA[last] = max_stazione(r);
+            }
+            else
+            {
+                r->AUTOSTRADA[last] = r->AUTOSTRADA[last]->prev;
+            }
             return NULL;
         }
     }
@@ -235,9 +249,10 @@ stazione * profonditainserimento(route * r, pint km, pint index){
                 return curr->prev;
         if(curr -> kms < km)
             return curr; //è il max.
-        else if(curr->kms == km){
-                 printf("\n Già presente una stazione al km %d.\n", km);
-                return NULL;
+        else if(curr->kms == km)
+        {
+            printf("\n Già presente una stazione al km %d.\n", km);
+            return NULL;
         }
         else
             return curr -> prev;
@@ -254,13 +269,18 @@ void insertion(route * r, pint km, pint index){
         new ->prev = r->AUTOSTRADA[0];
         r->AUTOSTRADA[0]->prev = new;
         new ->next = NULL;
+        r->lastindex++;
+        fixmax(r);
+        Check(r);
+        return;
     }
     if(curr ->next == NULL) //inserisco ultimo
     {
         stazione * new = initializestazione(km);
         curr->next = new;
         new ->prev = curr;
-        fixmax(r);
+        r->AUTOSTRADA[0]->prev = new;
+        new ->next = NULL;
     } 
     else
     {
@@ -278,13 +298,16 @@ void insertion(route * r, pint km, pint index){
             r->AUTOSTRADA[index] = curr ->next; //fino a qui il mio array punta ancora a vecchio posto se sono nel caso in cui tocca una cella.
     pint line = index + 1; //riga successiva ad inserito, faccio scalare di 1 tutti quanti.
     pint last = lastline(r);
-    while (line <= last){
+    while (line < last){
         r->AUTOSTRADA[line] = r->AUTOSTRADA[line]->prev; //arrivo con uno di anticipo a indice significativo.
         line++;   
     }
-    if(r->AUTOSTRADA[last] != NULL)
+    if(r->AUTOSTRADA[last] != NULL){
         if(r->AUTOSTRADA[last]->kms < km) //potrei aver inserito nuovo max.
-                fixmax(r);
+            fixmax(r);
+        if(last > 0)
+            r->AUTOSTRADA[last] = r->AUTOSTRADA[last]->prev;
+    }
     //aggiusto linee
     r->lastindex++;
     if(firstofthelist(r)) //ho inserito nuova testa di lista nell'ultima riga, ed è il massimo.
@@ -292,7 +315,7 @@ void insertion(route * r, pint km, pint index){
         pint linea = lastline(r);
         r->AUTOSTRADA[linea] = (stazione*) malloc(sizeof(stazione));
         r->AUTOSTRADA[linea] = max_stazione(r);
-    }
+    }//si entra solo se all'if precedente non segue un then.
     Check(r);
 }
 void littleinsert(route * r, pint km){
@@ -392,22 +415,25 @@ void cancella(route * r, pint km){
     stazione * B = s->next;
     A->next = B;
     if(B!=NULL) B->prev = A;
-    if(km == r->AUTOSTRADA[cell]->kms)
+    if(km == r->AUTOSTRADA[cell]->kms) //riferimento da array va cambiato
         r->AUTOSTRADA[cell] = r->AUTOSTRADA[cell]->next;
     free(s);
     printf("\n Cancellata stazione al km %d.", km);
     //aggiusto linee
-    int line = cellbyindex(r, index) + 1; //da successivo di cancellato, faccio scalare di 1 tutti quanti.
+    int line = cell + 1; //da successivo di cancellato, faccio scalare di 1 tutti quanti.
     int last = lastline(r);
     while (line <= last){
         r->AUTOSTRADA[line] = r->AUTOSTRADA[line]->next;
         line++;
     }
+    if(cell == last)
+        fixmax(r);
     r->lastindex--;
 }
 #pragma endregion
 int main(){ //aggiusta inserimenti, devo mantenere ordinato. Aggiusta cancellazioni, non le conta, aggiusta indicizzazioni.
-    route * sixtysix = InitializeAUTOSTRADA();
+    route * sixtysix = InitializeAUTOSTRADA(0);
+    //cancella(sixtysix, 0);
     printf("%d", autolen(sixtysix));
     inserimento(sixtysix, 100);
     inserimento(sixtysix, 66);
