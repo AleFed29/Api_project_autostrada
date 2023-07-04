@@ -75,6 +75,19 @@ void fixmax(route*r){
         curr = curr->next;
     r->AUTOSTRADA[0]->prev = curr;
 }
+void fixref(route * r, pint index){
+    if(index > 0 && index < lastline(r)){
+        stazione * curr = r->AUTOSTRADA[index - 1];
+        stazione * tofix = r->AUTOSTRADA[index];
+        pint len = autolen(r);
+        pint i = 0;
+        while (i<len){
+            curr = curr->next;
+            i++;
+        }
+        tofix ->prev = curr;        
+    }
+}
 stazione * min_stazione(route * r){
     return r->AUTOSTRADA[0];
 }
@@ -114,7 +127,7 @@ void plotline(route *r, pint line){
         curr = curr->next;
         i++;
     }
-    if(curr->next == NULL) printf("\t %d", curr->kms); //ultimo
+    if(curr->next == NULL && i<end) printf("\t %d", curr->kms); //ultimo
     printf("\n");
     }
     else{
@@ -125,12 +138,14 @@ int cercaprof(route * r, pint km, pint cell){
     int i;
     pint nodes = autolen(r);
     stazione * curr = r->AUTOSTRADA[cell];
-    for(i = 0; i < nodes && curr != NULL; i++)
+    for(i = 0; i < nodes && curr->next != NULL; i++)
     {
         if(curr->kms == km)
             return indexbycell(r, cell) + i;
         curr = curr ->next;
     }
+    if(curr->kms == km)
+        return indexbycell(r, cell) + i+1;
     return -1; //non c'è
 }
 int binarysearch(route * r, pint km, pint start, pint stop){
@@ -166,12 +181,18 @@ int seqsearch(route* r, pint km){
     int cells = lastline(r);
     while (r->AUTOSTRADA[i]->kms < km && i <= cells)
         i++;
-    if(r->AUTOSTRADA[i]->kms == km)
-        return indexbycell(r, i);
-    else if(i > 0)
-        return cercaprof(r,km,i-1); //cerco nell'ultimo indice che mi dà minore.
+    if(i <= cells){
+        if(r->AUTOSTRADA[i]->kms == km) //potrebbe fregarmi i più alto di cells.
+            return indexbycell(r, i);
+        else if(i > 0)
+            return cercaprof(r,km,i-1); //cerco nell'ultimo indice che mi dà minore.
+        else
+            return cercaprof(r,km,0);
+    }
     else
-        return cercaprof(r,km,0);
+    {
+        return cercaprof(r,km,i-1);
+    }
 }
 int cercaindice(route* r, pint km){
     if(r->lastindex < 9) //se lastindex è 9, ho 10 elementi e almeno le prime 4 righe piene
@@ -192,34 +213,128 @@ stazione * cerca(route* r, pint km){
 }
 #pragma endregion
 #pragma region Inserimentostazioni
-stazione * profonditainserimento(route * r, pint km, pint index){
+void riferimentoprimoelemento(route * r, pint km){
+    stazione * ref = r->AUTOSTRADA[0];
+    r->AUTOSTRADA[0] = initializestazione(km);
+    r->AUTOSTRADA[0]->prev = ref -> prev;
+    ref ->prev = r->AUTOSTRADA[0];
+    r->AUTOSTRADA[0]->next = ref;
+}
+//dopo inserimento
+void scrolling_forward(route * r, pint start, pint stop){
+    pint i = start;
+    while (i <= stop)
+    {
+        r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->prev;
+        i++;
+    } //vedi se fixref 
+}
+//dopo cancellazione
+void scrolling_back(route * r, pint start, pint stop){
+    pint i = start;
+    while (i <= stop)
+    {
+        r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
+        i++;
+    }//vedi se fixref 
+}
+stazione * perforamento(route * r, pint km,pint index){
+    pint i  = 0;
     stazione * curr = r->AUTOSTRADA[index];
     pint len = autolen(r);
-    if(index == 0){
-        if(r->AUTOSTRADA[0]->kms == km){
+    while (i < len && curr->next != NULL)
+    {
+        if(curr->kms == km){
             printf("\n Già presente una stazione al km %d.\n", km);
             return NULL;
         }
-        else if(r->AUTOSTRADA[0]->kms > km){
-            stazione * ref = r->AUTOSTRADA[0];
-            r->AUTOSTRADA[0] = initializestazione(km);
-            r->AUTOSTRADA[0]->prev = ref -> prev;
-            ref ->prev = r->AUTOSTRADA[0];
-            r->AUTOSTRADA[0]->next = ref;
+        else if(curr -> kms < km)
+            curr = curr ->next;
+        else if(i > 0)
+            return curr -> prev; //torno ad ultimo riferimento più piccolo "A" e metto tra A e B.
+        else //è la prima di una riga.
+        {
+            stazione * ref = r->AUTOSTRADA[index];
+            r->AUTOSTRADA[index] = initializestazione(km);
+            r->AUTOSTRADA[index] -> next = ref;
+            r->AUTOSTRADA[index] ->prev = ref->prev;
+            ref ->prev = r->AUTOSTRADA[index];
+            scrolling_forward(r,index,lastline(r));
+            r->lastindex++;
+            return NULL;  
+        }
+        i++;
+    }
+    if(curr -> kms < km)
+        return curr; //è il max.
+    else if(curr->kms == km) //è il max, ma c'è già
+        {
+            printf("\n Già presente una stazione al km %d.\n", km);
+            return NULL;
+        }
+    else
+        return curr -> prev; //ultimo ref minore.
+}
+
+stazione * inserimento_right(route * r, pint km, pint index){
+    if(index > 0){
+        
+        return perforamento(r,km,index);
+    }
+    else
+    {
+        if(km < r->AUTOSTRADA[0]->kms) //è il min
+        {    
+            riferimentoprimoelemento(r,km);
+            scrolling_forward(r,1,lastline(r));
+            r->lastindex++;
+            if(firstofthelist(r))
+            {
+                pint last = lastline(r);
+                r->AUTOSTRADA[last] = max_stazione(r);
+            }
+        }
+        else if(km == r->AUTOSTRADA[0]->kms)
+        {
+            printf("\n Già presente una stazione al km %d.\n", km);
+            return NULL;
+        }
+        else
+        {
+            stazione * curr = r->AUTOSTRADA[0];
+            pint len = autolen(r);
+            return perforamento(r,km,index);
+        }
+    }
+}
+stazione * profonditainserimento(route * r, pint km, pint index){
+    return inserimento_right(r,km,index);
+    stazione * curr = r->AUTOSTRADA[index];
+    pint len = autolen(r);
+    if(index == 0){
+        if(r->AUTOSTRADA[0]->kms > km) //è il minimo
+        {
+            riferimentoprimoelemento(r,km);
             r->lastindex++;
             pint i;
             pint last = lastline(r);
-            for(i = 1; i < last;i++)
-                r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->prev;
-            if(r->AUTOSTRADA[last] == NULL)
+            
+            if(r->AUTOSTRADA[last] == NULL) //lastline 
             {
-                r->AUTOSTRADA[last] = (stazione*) malloc(sizeof(stazione));
+                scrolling_forward(r,1,last-1);
+                //r->AUTOSTRADA[last] = (stazione*) malloc(sizeof(stazione)); Dovrebbe essere già allocata in virtù al sizing/resizing
                 r->AUTOSTRADA[last] = max_stazione(r);
             }
             else
             {
-                r->AUTOSTRADA[last] = r->AUTOSTRADA[last]->prev;
+                scrolling_forward(r,1,last);
+                //r->AUTOSTRADA[last] = r->AUTOSTRADA[last]->prev;
             }
+            return NULL;
+        }
+        else if(r->AUTOSTRADA[0]->kms == km) //primo elemento, ma già presente.
+        {
+            printf("\n Già presente una stazione al km %d.\n", km);
             return NULL;
         }
     }
@@ -239,14 +354,7 @@ stazione * profonditainserimento(route * r, pint km, pint index){
     else // può non essere completa la lista
     {
         while (curr->next != NULL && curr->kms < km)
-            if(curr->kms == km){
-                printf("\n Già presente una stazione al km %d.\n", km);
-                return NULL;
-            }
-            else if(curr -> kms < km)
-                curr = curr ->next;
-            else
-                return curr->prev;
+            curr = curr ->next;
         if(curr -> kms < km)
             return curr; //è il max.
         else if(curr->kms == km)
@@ -255,13 +363,10 @@ stazione * profonditainserimento(route * r, pint km, pint index){
             return NULL;
         }
         else
-            return curr -> prev;
+            return curr -> prev; //ultimo ref minore.
     }
 }
 void insertion(route * r, pint km, pint index){
-    stazione * curr = profonditainserimento(r,km,index);
-    if(curr == NULL)
-        return;
     if(r->lastindex == 0)
     {
         stazione * new = initializestazione(km);
@@ -271,9 +376,12 @@ void insertion(route * r, pint km, pint index){
         new ->next = NULL;
         r->lastindex++;
         fixmax(r);
-        Check(r);
+        //Check(r);
         return;
     }
+    stazione * curr = profonditainserimento(r,km,index);
+    if(curr == NULL)
+        return;
     if(curr ->next == NULL) //inserisco ultimo
     {
         stazione * new = initializestazione(km);
@@ -313,7 +421,7 @@ void insertion(route * r, pint km, pint index){
     if(firstofthelist(r)) //ho inserito nuova testa di lista nell'ultima riga, ed è il massimo.
     {
         pint linea = lastline(r);
-        r->AUTOSTRADA[linea] = (stazione*) malloc(sizeof(stazione));
+        //r->AUTOSTRADA[linea] = (stazione*) malloc(sizeof(stazione));
         r->AUTOSTRADA[linea] = max_stazione(r);
     }//si entra solo se all'if precedente non segue un then.
     Check(r);
