@@ -68,12 +68,33 @@ stazione * initializestazione(pint km/*,rbhead * autos*/){
 }
 #pragma endregion
 #pragma region MetodiScrollingRef
+//per inserimento: scorro [cell] avanti, catena all'indietro.
+void fixref_forward(stazione * this){
+    stazione *curr = (stazione *) malloc(sizeof(stazione)); 
+    curr = this; //salvo questo elemento
+    this = this->next; //copio il successivo
+    //qui non cancello anche this?
+    free(this ->next); //cancello il riferimento vecchio.
+    //può essere.
+    //salvo r->AUTOSTRADA[cell]
+    //gli attribuisco il valore del successivo.
+    //libero la vecchia copia.
+    //la copia di r->AUTOSTRADA[cell] punta a r->AUTOSTRADA[cell] nuovo.
+}
+//per cancellazione: scorro [cell] indietro, catena in avanti.
+void fixref_back(stazione * this){
+    stazione *curr = (stazione *) malloc(sizeof(stazione)); 
+    curr = this;
+    this = this ->prev;
+    free(this->prev);
+}
 //dopo inserimento
 void scrolling_forward(route * r, pint start, pint stop){
     pint i = start;
     while (i <= stop)
     {
-        r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->prev;
+        //r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->prev;
+        fixref_forward(r->AUTOSTRADA[i]);
         i++;
     } //vedi se fixref 
 }
@@ -82,15 +103,15 @@ void scrolling_back(route * r, pint start, pint stop){
     pint i = start;
     while (i <= stop)
     {
-        r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
+        fixref_back(r->AUTOSTRADA[i]);
         i++;
     }//vedi se fixref 
 }
 void Check(route * r){
     if(indexbycell(r, r->len) - r-> lastindex < 2){
-        stazione ** new = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2)); //raddoppio lunghezza vettore.
-        free(r->AUTOSTRADA);
-        r->AUTOSTRADA = new;
+        //stazione ** new = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2)); //raddoppio lunghezza vettore.
+        //r->AUTOSTRADA = new;
+        r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2));
         int i,j;
         pint cells = autolen(r); //devo spostare per L = log2(m) + 1 file.
         for(i = 1; i < cells; i++) //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
