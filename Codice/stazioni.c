@@ -68,42 +68,49 @@ stazione * initializestazione(pint km/*,rbhead * autos*/){
 }
 #pragma endregion
 #pragma region MetodiScrollingRef
-//per inserimento: scorro [cell] avanti, catena all'indietro.
+void Copia(stazione * A, stazione *B){
+    B->kms = A->kms;
+    B->next = A->next;
+    B->prev = A->prev;
+    //aggiusto riferimenti.
+    A->prev->next = B;
+    A->next->prev = B;
+}
+//per cancellazione: scorro [cell] avanti, catena all'indietro.
 void fixref_forward(stazione * this){
-    stazione *curr = (stazione *) malloc(sizeof(stazione)); 
-    curr = this; //salvo questo elemento
-    this = this->next; //copio il successivo
-    //qui non cancello anche this?
+    stazione * curr = (stazione *) malloc(sizeof(stazione));
+    Copia(this, curr); //salvo questo elemento
+    Copia(this->next, this); //copio il successivo
     free(this ->next); //cancello il riferimento vecchio.
     //può essere.
-    //salvo r->AUTOSTRADA[cell]
+    //salvo copia di r->AUTOSTRADA[cell]
     //gli attribuisco il valore del successivo.
     //libero la vecchia copia.
     //la copia di r->AUTOSTRADA[cell] punta a r->AUTOSTRADA[cell] nuovo.
 }
-//per cancellazione: scorro [cell] indietro, catena in avanti.
+//per inserimento: scorro [cell] indietro, catena in avanti.
 void fixref_back(stazione * this){
-    stazione *curr = (stazione *) malloc(sizeof(stazione)); 
-    curr = this;
-    this = this ->prev;
-    free(this->prev);
+    stazione * curr = (stazione *) malloc(sizeof(stazione));
+    Copia(this, curr); //salvo questo elemento
+    Copia(this->prev, this); //copio il successivo
+    free(this ->prev); //cancello il riferimento vecchio.
 }
 //dopo inserimento
 void scrolling_forward(route * r, pint start, pint stop){
-    pint i = start;
+    pint i = start+1;
     while (i <= stop)
     {
         //r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->prev;
-        fixref_forward(r->AUTOSTRADA[i]);
+        fixref_back(r->AUTOSTRADA[i]);//-1 in catene precedenti bilancia inserimento.
         i++;
     } //vedi se fixref 
 }
 //dopo cancellazione
 void scrolling_back(route * r, pint start, pint stop){
-    pint i = start;
+    pint i = start+1;
     while (i <= stop)
     {
-        fixref_back(r->AUTOSTRADA[i]);
+        fixref_forward(r->AUTOSTRADA[i]);//+1 in catene precedenti bilancia compilazione.
         i++;
     }//vedi se fixref 
 }
@@ -153,6 +160,10 @@ void plotline(route *r, pint line){
 #pragma region Ricercacella
 int binarysearch(route * r, pint km, pint start, pint stop){
     pint mid;
+    if(km > r->AUTOSTRADA[stop]->kms) //ultima riga
+        return stop;
+    if(km < r->AUTOSTRADA[start]->kms) //prima di prima riga.
+        return start;
     if(start < stop){
         mid = (pint)(ceil((start+stop)/2));
         if(km == r->AUTOSTRADA[mid]->kms) //caso ottimo, trovata.
@@ -222,8 +233,15 @@ stazione * cerca(route * r, pint km){
 /// @brief Cancella l'elemento stazione passato come parametro da r->AUTOSTRADA
 /// @param r Autostrada di cancellazione
 /// @param elemento stazione da cancellare
-void cancellazione(route * r, stazione * elemento){
-
+void cancellazione(route * r, stazione * elemento, pint cell){
+    //codice di cancellazione elemento
+    //codice
+    //scrolling
+    scrolling_back(r,cell,lastline(r));
+    r->lastindex++;
+    //se è il firstofthelastlist, bisogna aggiustare [lastline(r)]
+    //codice
+    Check(r);
 }
 void cancella(route * r, pint km){
     int cell = cellofelement(r,km);
@@ -234,8 +252,10 @@ void cancella(route * r, pint km){
     pint nodes = autolen(r);
     while (i < nodes && curr ->next != NULL)
     {
-        if(curr->kms == km)
-            cancellazione(r,curr);
+        if(curr->kms == km){
+            cancellazione(r,curr,cell);
+            return;
+        }
         else if(curr ->kms > km){
             printf("\n Non c'è una stazione al km %d.\n", km);
             return NULL;
@@ -246,7 +266,7 @@ void cancella(route * r, pint km){
             i++;    
         }
     }
-    printf("\n Non c'è una stazione al km %d.\n", km);
+    printf("\n Non c'è una stazione al km %d.\n", km); //in caso in cui km sia più grande di max->kms.
     return NULL;
 }
 /// @brief Inserisce elemento nella struttura dati.
