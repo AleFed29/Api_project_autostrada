@@ -68,64 +68,47 @@ stazione * initializestazione(pint km/*,rbhead * autos*/){
 }
 #pragma endregion
 #pragma region MetodiScrollingRef
-void Copia(stazione * A, stazione *B){
-    B->kms = A->kms;
-    B->next = A->next;
-    B->prev = A->prev;
-    //aggiusto riferimenti.
-    A->prev->next = B;
-    A->next->prev = B;
-}
-//per cancellazione: scorro [cell] avanti, catena all'indietro.
-void fixref_forward(stazione * this){
-    stazione * curr = (stazione *) malloc(sizeof(stazione));
-    Copia(this, curr); //salvo questo elemento
-    Copia(this->next, this); //copio il successivo
-    free(this ->next); //cancello il riferimento vecchio.
-    //può essere.
-    //salvo copia di r->AUTOSTRADA[cell]
-    //gli attribuisco il valore del successivo.
-    //libero la vecchia copia.
-    //la copia di r->AUTOSTRADA[cell] punta a r->AUTOSTRADA[cell] nuovo.
-}
-//per inserimento: scorro [cell] indietro, catena in avanti.
-void fixref_back(stazione * this){
-    stazione * curr = (stazione *) malloc(sizeof(stazione));
-    Copia(this, curr); //salvo questo elemento
-    Copia(this->prev, this); //copio il successivo
-    free(this ->prev); //cancello il riferimento vecchio.
-}
+//stessa cosa che avviene in "prova per puntatori"
+//ricordare che start >= 0 (riga di operazione).
+
 //dopo inserimento
 void scrolling_forward(route * r, pint start, pint stop){
     pint i = start+1;
     while (i <= stop)
     {
-        //r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->prev;
-        fixref_back(r->AUTOSTRADA[i]);//-1 in catene precedenti bilancia inserimento.
+        r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->prev;
+        //-1 in catene precedenti bilancia inserimento.
         i++;
-    } //vedi se fixref 
+    } 
 }
 //dopo cancellazione
 void scrolling_back(route * r, pint start, pint stop){
     pint i = start+1;
     while (i <= stop)
     {
-        fixref_forward(r->AUTOSTRADA[i]);//+1 in catene precedenti bilancia compilazione.
+        r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;//+1 in catene precedenti bilancia compilazione.
         i++;
-    }//vedi se fixref 
+    } 
 }
 void Check(route * r){
     if(indexbycell(r, r->len) - r-> lastindex < 2){
         //stazione ** new = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2)); //raddoppio lunghezza vettore.
         //r->AUTOSTRADA = new;
         r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2));
-        int i,j;
+        int i,j,k;
         pint cells = autolen(r); //devo spostare per L = log2(m) + 1 file.
-        for(i = 1; i < cells; i++) //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
-            for(j = 0; j < i; j++) //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
-                r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
-        r->AUTOSTRADA[cells] = NULL; //r->AUTOSTRADA[i]->next; la riga L all'inizio ha L elementi, alla fine ne avrà 0. 
-        r->len *= 2;
+        pint periodi = (pint)(r->len/cells);//ciclicamente avrò da cambiare la lunghezza di ogni riga per averle tutte autolen(r)+1; quante righe? ecco.
+        r->len *= 2;//dopo il calcolo di cells, perché io ho l-1 elementi in m righe.
+        //porto i elementi dalla riga i alla riga i-1, fino alla riga intera.
+        for(k = 0; k < periodi; k++)//ricorntrolla
+        {
+            pint firstindex = 1+k*cells;
+            pint lastone = (1+k)*cells;
+            for(i = firstindex; i < lastone; i++) //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
+                for(j = 0; j < i; j++) //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
+                    r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
+        }
+        //si mette già a posto da sola. //r->AUTOSTRADA[cells] = NULL; //r->AUTOSTRADA[i]->next; la riga L all'inizio ha L elementi, alla fine ne avrà 0. 
     }
 }
 #pragma endregion
