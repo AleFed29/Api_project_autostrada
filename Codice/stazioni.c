@@ -95,19 +95,24 @@ void Check(route * r){
         //stazione ** new = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2)); //raddoppio lunghezza vettore.
         //r->AUTOSTRADA = new;
         r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2));
-        int i,j,k;
+        int i = 1;
+        int j;
         pint cells = autolen(r); //devo spostare per L = log2(m) + 1 file.
-        pint periodi = (pint)(r->len/cells);//ciclicamente avrò da cambiare la lunghezza di ogni riga per averle tutte autolen(r)+1; quante righe? ecco.
+        pint oldlast = r->len;
         r->len *= 2;//dopo il calcolo di cells, perché io ho l-1 elementi in m righe.
         //porto i elementi dalla riga i alla riga i-1, fino alla riga intera.
-        for(k = 0; k < periodi; k++)//ricorntrolla
-        {
-            pint firstindex = 1+k*cells;
-            pint lastone = (1+k)*cells;
-            for(i = firstindex; i < lastone; i++) //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
-                for(j = 0; j < i; j++) //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
+        //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
+            while (i < oldlast)
+            {
+                //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
+                for(j = 0; j < i; j++)
+                { 
+                    if(r->AUTOSTRADA[i]->next == NULL)
+                        return;
                     r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
-        }
+                }
+                i++;
+            }
         //si mette già a posto da sola. //r->AUTOSTRADA[cells] = NULL; //r->AUTOSTRADA[i]->next; la riga L all'inizio ha L elementi, alla fine ne avrà 0. 
     }
 }
