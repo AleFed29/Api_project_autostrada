@@ -1,11 +1,3 @@
-/******************************************************************************
-
-Welcome to GDB Online.
-GDB online is an online compiler and debugger tool for C, C++, Python, Java, PHP, Ruby, Perl,
-C#, OCaml, VB, Swift, Pascal, Fortran, Haskell, Objective-C, Assembly, HTML, CSS, JS, SQLite, Prolog.
-Code, Compile, Run and Debug online from anywhere in world.
-
-*******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -15,14 +7,18 @@ typedef struct head
     int * first;
     int lastindex;
     int len;
+    int countzero;
 } head_vetture;
-
+int numberofelement(head_vetture * h){
+    return h->lastindex+h->countzero;
+}
 head_vetture * Initialize(){
     head_vetture * h = (head_vetture *) malloc(sizeof(head_vetture));
-    int * ptr = (int *) malloc(sizeof(int)*128);
-    h->len = 128;
+    int * ptr = (int *) malloc(sizeof(int)*16);
+    h->len = 16;
     h->lastindex = -1;
     h->first = ptr;
+    h->countzero = 0;
     return h;
 }
 int search_index(head_vetture*h, int key,int start, int stop, int forinsertion){
@@ -52,12 +48,16 @@ int search_index(head_vetture*h, int key,int start, int stop, int forinsertion){
     return -1;
 }
 int cerca(head_vetture*h, int key){
+    if(key == 0)
+        return (int)(h->countzero > 0) - 1;
     return search_index(h,key,0,h->lastindex,0);
 }
 int max(head_vetture*h){
     return h->first[h->lastindex];
 }
 int min(head_vetture*h){
+    if(h->countzero > 0)
+        return 0;
     return h->first[0];
 }
 void Check_vetture(head_vetture*h){
@@ -67,17 +67,22 @@ void Check_vetture(head_vetture*h){
         h->len = h->len*2;
     }
 }
+void Swap(int *a, int *b){
+    int c = *a;
+    *a = *b;
+    *b = c;
+}
 void slidingfor(head_vetture*h, int key, int firstvalue){
     int i;
     int temp = h->first[firstvalue];
-    h->first[firstvalue] = key;
     for(i=firstvalue; i<=h->lastindex; i++)
-    {
-        temp = h->first[i+1];
-        h->first[i+1] = temp; 
-    }
+        Swap(h->first[i+1], temp);
 }
 void insert(head_vetture*h, int key){
+    if(key == 0){
+        h->countzero++;
+        return;
+    }
     if(h->lastindex == -1)
     {
         h->first[0] = key;
@@ -105,8 +110,10 @@ void cancella(head_vetture*h, int key){
     int i = search_index(h,key,0,h->lastindex,0);
     if(i == -1)
         return;//andrà scritto messaggio.
-    while (i < h->lastindex)
-        h->first[i++] = h->first[i+1];
+    while (i < h->lastindex){
+        h->first[i] = h->first[i+1];
+        i++;
+    }
     h->lastindex--;
 }
 
