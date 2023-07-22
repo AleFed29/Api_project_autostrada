@@ -50,8 +50,10 @@ route * InitializeAUTOSTRADA(pint km/*, rbhead * autos*/){
     stazione ** try = (stazione **) malloc(sizeof(stazione*)*4);
     r->AUTOSTRADA = try;
     int i;
+    //forse è più pratico non eseguire queste malloc. Stai già sovrascrivendo?
     for(i=0; i<4; i++)
         r->AUTOSTRADA[i] = (stazione *)malloc(sizeof(stazione*));
+    //qui è meglio tenere inserimenti ordinati. quando indexbycell == cellbyindex, assegni il punto array.
     r-> AUTOSTRADA[0] ->kms = km;
     r->AUTOSTRADA[0]->next = NULL;
     r->AUTOSTRADA[0]->prev = NULL;
