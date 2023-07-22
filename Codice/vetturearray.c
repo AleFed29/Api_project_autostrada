@@ -10,7 +10,7 @@ typedef struct head
     int countzero;
 } head_vetture;
 int numberofelement(head_vetture * h){
-    return h->lastindex+h->countzero;
+    return h->lastindex+1+h->countzero;
 }
 head_vetture * Initialize(){
     head_vetture * h = (head_vetture *) malloc(sizeof(head_vetture));
@@ -36,6 +36,11 @@ int search_index(head_vetture*h, int key,int start, int stop, int forinsertion){
                 return start;
             else
                 return -1;
+        if(mid == stop && h->first[mid] !=key)
+            if(forinsertion == 1)
+                return stop;
+            else
+                return -1;
         if(h->first[mid] == key)
             return mid; //trovato    
         if(h->first[mid] < key)//nella seconda metà.
@@ -50,15 +55,24 @@ int search_index(head_vetture*h, int key,int start, int stop, int forinsertion){
 int cerca(head_vetture*h, int key){
     if(key == 0)
         return (int)(h->countzero > 0) - 1;
+    if(h->lastindex < 0)
+        return -1;
     return search_index(h,key,0,h->lastindex,0);
 }
 int max(head_vetture*h){
+    if(h->lastindex < 0)
+        if(h->countzero == 0)
+            return -1;
+        else
+            return 0;
     return h->first[h->lastindex];
 }
 int min(head_vetture*h){
     if(h->countzero > 0)
         return 0;
-    return h->first[0];
+    if(h->lastindex >= 0)
+        return h->first[0];
+    return -1;
 }
 void Check_vetture(head_vetture*h){
     if(h ->len - h->lastindex < 2)
@@ -75,8 +89,9 @@ void Swap(int *a, int *b){
 void slidingfor(head_vetture*h, int key, int firstvalue){
     int i;
     int temp = h->first[firstvalue];
-    for(i=firstvalue; i<=h->lastindex; i++)
-        Swap(h->first[i+1], temp);
+    h->first[firstvalue] = key;
+    for(i=firstvalue; i<= h->lastindex; i++)
+        Swap(&(h->first[i+1]), &temp);
 }
 void insert(head_vetture*h, int key){
     if(key == 0){
@@ -93,8 +108,7 @@ void insert(head_vetture*h, int key){
         h->first[h->lastindex+1] = key;
     else 
     {    
-        int zone = search_index(h,key,0,h->lastindex,1);
-        int i = zone;
+        int i = search_index(h,key,0,h->lastindex,1);
         while (h->first[i]<= key && i <= h->lastindex)
             i++;
         while (h->first[i] > key && i <= h->lastindex)
@@ -120,12 +134,15 @@ void cancella(head_vetture*h, int key){
 int main()
 {
     head_vetture * h = Initialize();
-    //insert(h,4);
-    //insert(h,25);
+    insert(h,4);
+    insert(h,25);
     //capisci come mai, con questi, esce 4,25,0,3,6,...e non 0, 3,4,6,...
     int i;
-    for(i=0; i < 30; i+=3)
+    for(i=0; i < 60; i+=3)
         insert(h,i);
+    insert(h, 17);
+    insert(h,26);
+    printf("\n zero:%d", h->countzero);
     for(i=0; i<=h->lastindex; i++)
         printf("\n %d:%d",i, h->first[i]);
     int index21 = cerca(h,21);
