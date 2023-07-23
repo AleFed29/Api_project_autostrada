@@ -68,6 +68,10 @@ stazione * initializestazione(pint km/*,rbhead * autos*/){
     //s->vetture = autos;
     return s; 
 }
+stazione * EXNOVOstation(pint km/*,head_vetture * autos*/){
+    //head_vetture h = ...
+    return initializestazione(km/*,h*/);
+}
 #pragma endregion
 #pragma region MetodiScrollingRef
 //stessa cosa che avviene in "prova per puntatori"
@@ -82,6 +86,11 @@ void scrolling_forward(route * r, pint start, pint stop){
         //-1 in catene precedenti bilancia inserimento.
         i++;
     } 
+    //avviene solo se precedente checking mi ha dato l'ok.
+    if(cellbyindex(r, r->lastindex+1) > lastline(r)) //ho inserito elemento di nuova lista, ora però [lastline(r)+1] è NULL
+    {
+        r->AUTOSTRADA[lastline(r)+1] = r->AUTOSTRADA[0]->prev; //max
+    }
 }
 //dopo cancellazione
 void scrolling_back(route * r, pint start, pint stop){
@@ -142,7 +151,6 @@ void plotline(route *r, pint line){
 
 
 //dai, riprovaci! Ce la puoi fare.
-//basta mantenere la calma, usare propriamente la libreria rb, e poi, con cancelazione ed inserimento corretti, hai tutto.
 //algo.txt per un percorso.
 //l'altro ci penserai.
 
@@ -191,7 +199,7 @@ int seqsearch(route * r, pint km){
 int cellofelement(route * r, pint km){
     if(r->lastindex < 9)
         return seqsearch(r,km);
-    else return binarysearch(r,km,0,lastline(r))
+    else return binarysearch(r,km,0,lastline(r));
 }
 #pragma endregion
 #pragma region RicercaInserimentoCancellazione
@@ -199,7 +207,7 @@ int cellofelement(route * r, pint km){
 /// @param r Autostrada su cui cercare
 /// @param km Chilometro della stazione 
 /// @return La stazione, se esiste, altrimenti NULL
-stazione * cerca(route * r, pint km){
+stazione * cerca_stazione(route * r, pint km){
     int cell = cellofelement(r,km);
     if(cell == -1)
         return NULL;
@@ -223,32 +231,47 @@ stazione * cerca(route * r, pint km){
 /// @brief Cancella l'elemento stazione passato come parametro da r->AUTOSTRADA
 /// @param r Autostrada di cancellazione
 /// @param elemento stazione da cancellare
-void cancellazione(route * r, stazione * elemento, pint cell){
+void cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
     //codice di cancellazione elemento
     //codice
+    if(cell != 0 || posizione != 0){
+        stazione * prima = elemento -> prev;
+        stazione * dopo = elemento -> next;
+        prima ->next = dopo;
+        dopo ->prev = prima;
+        free(elemento);
+    }
+    else
+    {
+        stazione * max = r->AUTOSTRADA[0] -> prev;
+        stazione * vecchio = r->AUTOSTRADA[0];
+        r->AUTOSTRADA[0] = r->AUTOSTRADA[0]->next;   
+        if(r->AUTOSTRADA[0] != NULL)
+            r->AUTOSTRADA[0]->prev = max;
+        if(elemento == vecchio) //controlla sia così...
+            free(vecchio);
+    }
     //scrolling
     scrolling_back(r,cell,lastline(r));
-    r->lastindex++;
-    //se è il firstofthelastlist, bisogna aggiustare [lastline(r)]
-    //codice
-    Check(r);
+    r->lastindex--;
 }
-void cancella(route * r, pint km){
+void cancella_stazione(route * r, pint km){
+    if(r->lastindex < 0) return;
     int cell = cellofelement(r,km);
     if(cell == -1)
-        return NULL;
+        return;
     stazione * curr = r->AUTOSTRADA[cell];
     pint i = 0;
     pint nodes = autolen(r);
     while (i < nodes && curr ->next != NULL)
     {
         if(curr->kms == km){
-            cancellazione(r,curr,cell);
+            cancellazione(r,curr,cell, i);
             return;
         }
         else if(curr ->kms > km){
             printf("\n Non c'è una stazione al km %d.\n", km);
-            return NULL;
+            return;
         }
         else
         {
@@ -257,26 +280,54 @@ void cancella(route * r, pint km){
         }
     }
     printf("\n Non c'è una stazione al km %d.\n", km); //in caso in cui km sia più grande di max->kms.
-    return NULL;
+    return;
 }
 /// @brief Inserisce elemento nella struttura dati.
 /// @param r Autostrada alla quale inserire la stazione.
 /// @param km Chilometri della nuova stazione.
 /// @param ref Riferimento al futuro predecessore della nuova stazione.
 void inserimento(route * r, pint km, stazione * ref){
-
+    stazione * new = EXNOVOstation(km);
+    new ->prev = ref;
+    new ->next = ref->next;
+    if(r->AUTOSTRADA[0] ->prev == ref) //è il massimo.
+        r->AUTOSTRADA[0]->prev = new; 
+    if(ref->next != NULL)
+        ref->next->prev = new;
+    ref -> next = new;
+    //fase di scrolling-checking
+    scrolling_forward(r,cell,lastline(r));
+    r->lastindex++;
+    Check(r);
 }
 /// @brief Inserisce elemento nella struttura dati.
 /// @param r Autostrada alla quale inserire la stazione.
 /// @param km Chilometri della nuova stazione.
 /// @param ref Riferimento al futuro successore della nuova stazione.
 void inserimento_testa(route * r, pint km, stazione * ref){
-
+    stazione * new = EXNOVOstation(km);
+    if(ref == r->AUTOSTRADA[0])
+    {
+        new ->next = ref;
+        new ->prev = ref ->prev;
+        if(r->AUTOSTRADA[0] != NULL)
+            ref ->prev = new;
+        r->AUTOSTRADA[0] = new;
+        //fase scrolling-checking
+        scrolling_forward(r,0,lastline(r));
+        r->lastindex++;
+        Check(r);
+    }
 }
 void inserisci(route * r, int km){
+    if(km < r->AUTOSTRADA[0]->kms) //inserisco minimo
+    {
+        inserimento_testa(r,km, r->AUTOSTRADA[0]);
+        return;
+    }
     int cell = cellofelement(r,km);
     if(cell == -1)
-        return NULL;
+        return;
     stazione * curr = r->AUTOSTRADA[cell];
     pint i = 0;
     pint nodes = autolen(r);
@@ -285,12 +336,12 @@ void inserisci(route * r, int km){
         if(curr->kms == km)
         {
             printf("\n Già presente una stazione al km %d.\n", km);
-            return NULL;
+            return;
         }
         else if(curr ->kms > km){
             if(i > 0)
             {
-                inserimento(r,km,curr->prev);
+                inserimento(r,km,curr->prev);        
                 return;
             }
             else
@@ -305,8 +356,8 @@ void inserisci(route * r, int km){
             i++;    
         }
     }
-    if(i < nodes) // allora curr->next == NULL
-        inserimento(r,km,curr);
+    if(i < nodes)// allora curr->next == NULL
+        inserimento(r,km,curr); //sto inserendo massimo.
 }
 #pragma endregion
 

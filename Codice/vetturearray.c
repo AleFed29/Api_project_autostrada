@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#pragma region vetture
 typedef struct head
 {
     int * first;
@@ -130,7 +131,7 @@ void cancella(head_vetture*h, int key){
     }
     h->lastindex--;
 }
-
+#pragma endregion vetture
 int main()
 {
     head_vetture * h = Initialize();
