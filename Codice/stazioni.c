@@ -42,6 +42,13 @@ pint cellbyindex(route*r, int index){ //posso avere index -1
 pint indexbycell(route*r, pint cell){
     return cell*autolen(r);
 }
+stazione * max(route *r){
+    return r->AUTOSTRADA[0]->prev;
+}
+stazione * min(route * r){
+    return r->AUTOSTRADA[0];
+}
+
 #pragma endregion
 #pragma region MetodiGestioneStrutturaDati
 route * InitializeAUTOSTRADA(pint km/*, rbhead * autos*/){
@@ -49,14 +56,10 @@ route * InitializeAUTOSTRADA(pint km/*, rbhead * autos*/){
     r->len = 4;
     stazione ** try = (stazione **) malloc(sizeof(stazione*)*4);
     r->AUTOSTRADA = try;
-    int i;
-    //forse è più pratico non eseguire queste malloc. Stai già sovrascrivendo?
-    for(i=0; i<4; i++)
-        r->AUTOSTRADA[i] = (stazione *)malloc(sizeof(stazione*));
-    //qui è meglio tenere inserimenti ordinati. quando indexbycell == cellbyindex, assegni il punto array.
+    r->AUTOSTRADA[0] = (stazione *)malloc(sizeof(stazione*));
     r-> AUTOSTRADA[0] ->kms = km;
     r->AUTOSTRADA[0]->next = NULL;
-    r->AUTOSTRADA[0]->prev = NULL;
+    r->AUTOSTRADA[0]->prev = r->AUTOSTRADA[0];
     //r->AUTOSTRADA[0] -> vetture = autos;
     r->lastindex = 0;
     return r;
@@ -89,7 +92,7 @@ void scrolling_forward(route * r, pint start, pint stop){
     //avviene solo se precedente checking mi ha dato l'ok.
     if(cellbyindex(r, r->lastindex+1) > lastline(r)) //ho inserito elemento di nuova lista, ora però [lastline(r)+1] è NULL
     {
-        r->AUTOSTRADA[lastline(r)+1] = r->AUTOSTRADA[0]->prev; //max
+        r->AUTOSTRADA[lastline(r)+1] = max(r); //max
     }
 }
 //dopo cancellazione
@@ -102,6 +105,14 @@ void scrolling_back(route * r, pint start, pint stop){
     } 
 }
 void Check(route * r){
+    //ho esaurito vecchia linea
+    if(r->lastindex % autolen(r) == 0){
+    pint last = lastline(r);
+    if(r->AUTOSTRADA[last] == NULL)
+        if(indexbycell(r, last) == r->lastindex)
+            r->AUTOSTRADA[last] = max(r);
+    }
+    //inizializzo nuova linea.
     if(indexbycell(r, r->len) - r-> lastindex < 2){
         //stazione ** new = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2)); //raddoppio lunghezza vettore.
         //r->AUTOSTRADA = new;
@@ -149,11 +160,9 @@ void plotline(route *r, pint line){
 }
 #pragma endregion
 
-
 //dai, riprovaci! Ce la puoi fare.
 //algo.txt per un percorso.
 //l'altro ci penserai.
-
 
 #pragma region Ricercacella
 int binarysearch(route * r, pint km, pint start, pint stop){
@@ -184,7 +193,7 @@ int binarysearch(route * r, pint km, pint start, pint stop){
 int seqsearch(route * r, pint km){
     int i = 0;
     int cells = lastline(r);
-    while (r->AUTOSTRADA[i]->kms < km && i <= cells)
+    while ( i <= cells && r->AUTOSTRADA[i]->kms < km)
         i++;
     if(i <= cells)
         if(r->AUTOSTRADA[i]->kms == km) //potrebbe fregarmi i più alto di cells.
@@ -238,16 +247,17 @@ void cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
         stazione * prima = elemento -> prev;
         stazione * dopo = elemento -> next;
         prima ->next = dopo;
-        dopo ->prev = prima;
+        if(dopo != NULL)
+            dopo ->prev = prima;
         free(elemento);
     }
     else
     {
-        stazione * max = r->AUTOSTRADA[0] -> prev;
+        stazione * massimo = max(r);
         stazione * vecchio = r->AUTOSTRADA[0];
         r->AUTOSTRADA[0] = r->AUTOSTRADA[0]->next;   
         if(r->AUTOSTRADA[0] != NULL)
-            r->AUTOSTRADA[0]->prev = max;
+            r->AUTOSTRADA[0]->prev = massimo;
         if(elemento == vecchio) //controlla sia così...
             free(vecchio);
     }
@@ -279,14 +289,18 @@ void cancella_stazione(route * r, pint km){
             i++;    
         }
     }
-    printf("\n Non c'è una stazione al km %d.\n", km); //in caso in cui km sia più grande di max->kms.
+    if(curr ->kms != km)
+        printf("\n Non c'è una stazione al km %d.\n", km); //in caso in cui km sia più grande di max->kms.
+    else
+        cancellazione(r,curr,cell, i);
     return;
 }
 /// @brief Inserisce elemento nella struttura dati.
 /// @param r Autostrada alla quale inserire la stazione.
 /// @param km Chilometri della nuova stazione.
 /// @param ref Riferimento al futuro predecessore della nuova stazione.
-void inserimento(route * r, pint km, stazione * ref){
+/// @param cell Linea di inserimento.
+void inserimento(route * r, pint km, stazione * ref, pint cell){
     stazione * new = EXNOVOstation(km);
     new ->prev = ref;
     new ->next = ref->next;
@@ -319,7 +333,7 @@ void inserimento_testa(route * r, pint km, stazione * ref){
         Check(r);
     }
 }
-void inserisci(route * r, int km){
+void inserisci_stazione(route * r, int km){
     if(km < r->AUTOSTRADA[0]->kms) //inserisco minimo
     {
         inserimento_testa(r,km, r->AUTOSTRADA[0]);
@@ -341,7 +355,7 @@ void inserisci(route * r, int km){
         else if(curr ->kms > km){
             if(i > 0)
             {
-                inserimento(r,km,curr->prev);        
+                inserimento(r,km,curr->prev, cell);        
                 return;
             }
             else
@@ -357,8 +371,46 @@ void inserisci(route * r, int km){
         }
     }
     if(i < nodes)// allora curr->next == NULL
-        inserimento(r,km,curr); //sto inserendo massimo.
+        inserimento(r,km,curr, cell); //sto inserendo massimo.
+    else //sono a fine riga, ma la stazione della nuova riga esiste.
+    {
+        pint newcell = cell+1;
+        stazione * old = r->AUTOSTRADA[newcell];
+        r->AUTOSTRADA[newcell] = EXNOVOstation(km);
+        r->AUTOSTRADA[newcell]->next = old;
+        r->AUTOSTRADA[newcell]->prev = old ->prev;
+        old ->prev = r->AUTOSTRADA[newcell];
+        scrolling_forward(r,newcell,lastline(r));
+        r->lastindex++;
+        Check(r);
+    }
 }
 #pragma endregion
 
 #pragma endregion stazioni
+
+int main(){
+    route * sixtysix = InitializeAUTOSTRADA(66);
+    inserisci_stazione(sixtysix,100);
+    inserisci_stazione(sixtysix,100000);
+    plotline(sixtysix,0);
+    plotline(sixtysix,1);
+    inserisci_stazione(sixtysix,2);
+    inserisci_stazione(sixtysix, 200);
+    stazione * nuova = cerca_stazione(sixtysix, 200);
+    printf("\n %d \n",nuova -> kms);
+    plotline(sixtysix,0);
+    plotline(sixtysix,1);
+    plotline(sixtysix,2);
+    cancella_stazione(sixtysix, 3);
+    cancella_stazione(sixtysix, 100000);
+    plotline(sixtysix,0);
+    plotline(sixtysix,1);
+    plotline(sixtysix,2);
+    pint i;
+    for(i = 0; i < 100; i++)
+        inserisci_stazione(sixtysix, 300 + 3*i);
+    pint last = lastline(sixtysix);
+    for(i = 0; i <= last; i++)
+        plotline(sixtysix,i);
+}
