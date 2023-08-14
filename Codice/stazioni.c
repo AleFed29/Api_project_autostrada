@@ -158,6 +158,12 @@ void plotline(route *r, pint line){
         printf("\n\tRiga %d non esistente.\n", line);
     }
 }
+void plot(route *r){
+    pint i;
+    pint last = lastline(r);
+    for(i = 0; i <= last; i++)
+        plotline(r,i);
+}
 #pragma endregion
 
 //dai, riprovaci! Ce la puoi fare.
@@ -235,6 +241,9 @@ stazione * cerca_stazione(route * r, pint km){
             i++;    
         }
     }
+    if(curr ->next == NULL)
+        if(curr->kms == km)
+            return curr;
     return NULL;
 }
 /// @brief Cancella l'elemento stazione passato come parametro da r->AUTOSTRADA
@@ -247,8 +256,10 @@ void cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
         stazione * prima = elemento -> prev;
         stazione * dopo = elemento -> next;
         prima ->next = dopo;
-        if(dopo != NULL)
+        if(dopo != NULL) //sto cancellando massimo?
             dopo ->prev = prima;
+        else
+            r->AUTOSTRADA[0]->prev = prima;
         free(elemento);
     }
     else
@@ -410,7 +421,5 @@ int main(){
     pint i;
     for(i = 0; i < 100; i++)
         inserisci_stazione(sixtysix, 300 + 3*i);
-    pint last = lastline(sixtysix);
-    for(i = 0; i <= last; i++)
-        plotline(sixtysix,i);
+    plot(sixtysix);
 }
