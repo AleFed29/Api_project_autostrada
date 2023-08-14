@@ -124,17 +124,17 @@ void Check(route * r){
         r->len *= 2;//dopo il calcolo di cells, perché io ho l-1 elementi in m righe.
         //porto i elementi dalla riga i alla riga i-1, fino alla riga intera.
         //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
-            while (i < oldlast)
-            {
-                //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
-                for(j = 0; j < i; j++)
-                { 
-                    if(r->AUTOSTRADA[i]->next == NULL)
-                        return;
-                    r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
-                }
-                i++;
+        while (i < oldlast)
+        {
+            //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
+            for(j = 0; j < i-1; j++)
+            { 
+                if(r->AUTOSTRADA[i]->next == NULL)
+                    return;
+                r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
             }
+            i++;
+        }
         //si mette già a posto da sola. //r->AUTOSTRADA[cells] = NULL; //r->AUTOSTRADA[i]->next; la riga L all'inizio ha L elementi, alla fine ne avrà 0. 
     }
 }
@@ -404,20 +404,15 @@ int main(){
     route * sixtysix = InitializeAUTOSTRADA(66);
     inserisci_stazione(sixtysix,100);
     inserisci_stazione(sixtysix,100000);
-    plotline(sixtysix,0);
-    plotline(sixtysix,1);
+    plot(sixtysix);
     inserisci_stazione(sixtysix,2);
     inserisci_stazione(sixtysix, 200);
     stazione * nuova = cerca_stazione(sixtysix, 200);
     printf("\n %d \n",nuova -> kms);
-    plotline(sixtysix,0);
-    plotline(sixtysix,1);
-    plotline(sixtysix,2);
+    plot(sixtysix);
     cancella_stazione(sixtysix, 3);
     cancella_stazione(sixtysix, 100000);
-    plotline(sixtysix,0);
-    plotline(sixtysix,1);
-    plotline(sixtysix,2);
+    plot(sixtysix);
     pint i;
     for(i = 0; i < 100; i++)
         inserisci_stazione(sixtysix, 300 + 3*i);
