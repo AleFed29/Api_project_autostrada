@@ -102,7 +102,7 @@ void scrolling_back(route * r, pint start, pint stop){
     {
         r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;//+1 in catene precedenti bilancia compilazione.
         i++;
-    } 
+    }
 }
 void Check(route * r){
     //ho esaurito vecchia linea
@@ -114,8 +114,6 @@ void Check(route * r){
     }
     //inizializzo nuova linea.
     if(indexbycell(r, r->len) - r-> lastindex < 2){
-        //stazione ** new = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2)); //raddoppio lunghezza vettore.
-        //r->AUTOSTRADA = new;
         r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2));
         int i = 1;
         int j;
@@ -165,11 +163,6 @@ void plot(route *r){
         plotline(r,i);
 }
 #pragma endregion
-
-//dai, riprovaci! Ce la puoi fare.
-//algo.txt per un percorso.
-//l'altro ci penserai.
-
 #pragma region Ricercacella
 int binarysearch(route * r, pint km, pint start, pint stop){
     pint mid;

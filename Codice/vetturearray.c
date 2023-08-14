@@ -137,7 +137,6 @@ int main()
     head_vetture * h = Initialize();
     insert(h,4);
     insert(h,25);
-    //capisci come mai, con questi, esce 4,25,0,3,6,...e non 0, 3,4,6,...
     int i;
     for(i=0; i < 60; i+=3)
         insert(h,i);
