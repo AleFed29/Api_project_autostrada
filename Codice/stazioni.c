@@ -299,6 +299,16 @@ void cancella_stazione(route * r, pint km){
         cancellazione(r,curr,cell, i);
     return;
 }
+void inserisci_tra_due(stazione*dainserire, stazione*precedente, stazione*successivo){
+    if(precedente ->next == successivo)
+    {
+        dainserire ->prev = precedente;
+        dainserire ->next = successivo;
+        precedente ->next = dainserire;
+        if(successivo != NULL)
+            successivo ->prev = dainserire;
+    }
+}
 /// @brief Inserisce elemento nella struttura dati.
 /// @param r Autostrada alla quale inserire la stazione.
 /// @param km Chilometri della nuova stazione.
@@ -306,13 +316,14 @@ void cancella_stazione(route * r, pint km){
 /// @param cell Linea di inserimento.
 void inserimento(route * r, pint km, stazione * ref, pint cell){
     stazione * new = EXNOVOstation(km);
-    new ->prev = ref;
+    /*new ->prev = ref;
     new ->next = ref->next;
+    if(new->next != NULL)
+        new->next->prev = new;
+    ref -> next = new;*/
+    inserisci_tra_due(new, ref, ref->next);
     if(r->AUTOSTRADA[0] ->prev == ref) //è il massimo.
         r->AUTOSTRADA[0]->prev = new; 
-    if(ref->next != NULL)
-        ref->next->prev = new;
-    ref -> next = new;
     //fase di scrolling-checking
     scrolling_forward(r,cell,lastline(r));
     r->lastindex++;
@@ -362,11 +373,12 @@ void inserisci_stazione(route * r, int km){
                 inserimento(r,km,curr->prev, cell);        
                 return;
             }
-            else
+            //non finisce mai nell'ELSE perché altrimenti vorrebbe dire che ricerca binaria fallisce.
+            /*else
             {
                 inserimento_testa(r, km, r->AUTOSTRADA[cell]);
                 return;
-            }
+            }*/
         }
         else
         {
@@ -395,6 +407,12 @@ void inserisci_stazione(route * r, int km){
 
 int main(){
     route * sixtysix = InitializeAUTOSTRADA(66);
+    pint cont;
+    /*for(cont = 1; cont < 120; cont+=2)
+        inserisci_stazione(sixtysix,cont);
+    */
+   //inserimento sequenziale non può essere effettuato riga per riga, ma elemento per elemento. Oppure lo si aggiusta.
+   //si aggiusta riferimento quando in una riga inserisco in mezzo a due elementi e devo scrollare.
     inserisci_stazione(sixtysix,100);
     inserisci_stazione(sixtysix,100000);
     plot(sixtysix);
