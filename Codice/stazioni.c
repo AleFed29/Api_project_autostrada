@@ -333,17 +333,17 @@ void inserimento(route * r, pint km, stazione * ref, pint cell){
 /// @param r Autostrada alla quale inserire la stazione.
 /// @param km Chilometri della nuova stazione.
 /// @param ref Riferimento al futuro successore della nuova stazione.
-void inserimento_testa(route * r, pint km, stazione * ref){
+void inserimento_testa(route * r, pint km, stazione * ref, pint cell){
     stazione * new = EXNOVOstation(km);
-    if(ref == r->AUTOSTRADA[0])
+    if(ref == r->AUTOSTRADA[cell])
     {
         new ->next = ref;
         new ->prev = ref ->prev;
-        if(r->AUTOSTRADA[0] != NULL)
+        if(r->AUTOSTRADA[cell] != NULL)
             ref ->prev = new;
-        r->AUTOSTRADA[0] = new;
+        r->AUTOSTRADA[cell] = new;
         //fase scrolling-checking
-        scrolling_forward(r,0,lastline(r));
+        scrolling_forward(r,cell,lastline(r));
         r->lastindex++;
         Check(r);
     }
@@ -351,7 +351,7 @@ void inserimento_testa(route * r, pint km, stazione * ref){
 void inserisci_stazione(route * r, int km){
     if(km < r->AUTOSTRADA[0]->kms) //inserisco minimo
     {
-        inserimento_testa(r,km, r->AUTOSTRADA[0]);
+        inserimento_testa(r,km, r->AUTOSTRADA[0], 0);
         return;
     }
     int cell = cellofelement(r,km);
@@ -376,7 +376,7 @@ void inserisci_stazione(route * r, int km){
             //non finisce mai nell'ELSE perché altrimenti vorrebbe dire che ricerca binaria fallisce.
             /*else
             {
-                inserimento_testa(r, km, r->AUTOSTRADA[cell]);
+                inserimento_testa(r, km, r->AUTOSTRADA[cell], cell);
                 return;
             }*/
         }
@@ -387,15 +387,14 @@ void inserisci_stazione(route * r, int km){
         }
     }
     if(i < nodes)// allora curr->next == NULL
-        inserimento(r,km,curr, cell); //sto inserendo massimo.
+        if(curr->kms > km)
+            inserimento(r,km,curr->prev, cell);
+        else
+            inserimento(r,km,curr, cell); //sto inserendo massimo.
     else //sono a fine riga, ma la stazione della nuova riga esiste.
-    {
+    {//qui sono certo che cell < lastline(r), altrimenti avrei tutto pieno.
         pint newcell = cell+1;
-        stazione * old = r->AUTOSTRADA[newcell];
-        r->AUTOSTRADA[newcell] = EXNOVOstation(km);
-        r->AUTOSTRADA[newcell]->next = old;
-        r->AUTOSTRADA[newcell]->prev = old ->prev;
-        old ->prev = r->AUTOSTRADA[newcell];
+        inserimento_testa(r,km,r->AUTOSTRADA[newcell], newcell);
         scrolling_forward(r,newcell,lastline(r));
         r->lastindex++;
         Check(r);
