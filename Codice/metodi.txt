@@ -1,0 +1,78 @@
+void inserimento_testa(route * r, pint km, stazione * ref, pint cell){
+    stazione * new = EXNOVOstation(km);
+    if(ref == r->AUTOSTRADA[cell])
+    {
+        new ->next = ref;
+        new ->prev = ref ->prev;
+        if(r->AUTOSTRADA[cell] != NULL)
+            ref ->prev = new;
+        r->AUTOSTRADA[cell] = new;
+        //fase scrolling-checking
+        scrolling_forward(r,cell,lastline(r));
+        r->lastindex++;
+        Check(r);
+    }
+}
+
+/*
+//cancellazione [0]
+stazione * massimo = max(r);
+        stazione * vecchio = r->AUTOSTRADA[0];
+        r->AUTOSTRADA[0] = r->AUTOSTRADA[0]->next;   
+        if(r->AUTOSTRADA[0] != NULL)
+            r->AUTOSTRADA[0]->prev = massimo;
+        if(elemento == vecchio) //controlla sia così...
+            free(vecchio);
+*/
+void scrollascrollascrolla(route * r, pint stop)
+{
+    pint nodes = autolen(r);
+    pint periodi = (pint)(stop/nodes);
+    pint i,j,k;
+    pint pos, per, lastcont;
+    for(i=0; i<periodi; i++){
+        per = i*nodes;
+        for(j=0; j < nodes; j++)
+            for(k=0; k < j; k++){
+                pos = per + j; //i-esimo periodo, nodesima riga.
+                r->AUTOSTRADA[pos] = r->AUTOSTRADA[pos]->next;
+            }
+    }
+    //ultimo periodo
+    lastcont = 0;
+    for(j=pos; j < stop; j++){
+        for(k=0; k < lastcont; k++)
+            r->AUTOSTRADA[j] = r->AUTOSTRADA[j]->next;
+        lastcont++;
+    }
+
+}
+
+
+/*
+//dopo il calcolo di cells, perché io ho l-1 elementi in m righe.
+        //porto i elementi dalla riga i alla riga i-1, fino alla riga intera.
+        //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
+        while (i < oldlast)
+        {
+            //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
+            for(j = 0; j < i-1; j++)
+            { 
+                if(r->AUTOSTRADA[i]->next == NULL)
+                    return;
+                r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
+            }
+            i++;
+        }
+        //si mette già a posto da sola. //r->AUTOSTRADA[cells] = NULL; //r->AUTOSTRADA[i]->next; la riga L all'inizio ha L elementi, alla fine ne avrà 0. 
+
+*/
+
+
+
+
+
+
+
+
+

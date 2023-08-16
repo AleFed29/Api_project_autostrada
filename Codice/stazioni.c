@@ -17,7 +17,6 @@ typedef struct
     pint lastindex;
     pint len;
 }route;
-
 pint Log2( pint x )
 {
   pint ans = 0;
@@ -78,8 +77,6 @@ stazione * EXNOVOstation(pint km/*,head_vetture * autos*/){
 #pragma endregion
 #pragma region MetodiScrollingRef
 //stessa cosa che avviene in "prova per puntatori"
-//ricordare che start >= 0 (riga di operazione).
-
 //dopo inserimento
 void scrolling_forward(route * r, pint start, pint stop){
     pint i = start+1;
@@ -104,36 +101,21 @@ void scrolling_back(route * r, pint start, pint stop){
         i++;
     }
 }
-void Check(route * r){
+
+
+void Check(route * r){    
     //ho esaurito vecchia linea
-    if(r->lastindex % autolen(r) == 0){
-    pint last = lastline(r);
-    if(r->AUTOSTRADA[last] == NULL)
-        if(indexbycell(r, last) == r->lastindex)
-            r->AUTOSTRADA[last] = max(r);
-    }
+    if(r->lastindex % autolen(r) == 0)
+        r->AUTOSTRADA[lastline(r)] = max(r); //sto occupando nuova riga, sicuramente era NULL
     //inizializzo nuova linea.
     if(indexbycell(r, r->len) - r-> lastindex < 2){
         r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2));
-        int i = 1;
+        int i;
         int j;
         pint cells = autolen(r); //devo spostare per L = log2(m) + 1 file.
         pint oldlast = r->len;
-        r->len *= 2;//dopo il calcolo di cells, perché io ho l-1 elementi in m righe.
-        //porto i elementi dalla riga i alla riga i-1, fino alla riga intera.
-        //elemento i-esimo array deve puntare a elemento i posti dopo. Si svuota [cells], ma [cells-1] assorbe tutti i L-1 elementi di [cells] e aggiunge l'unico che gli resta.
-        while (i < oldlast)
-        {
-            //[0] L-1 + 1,[1] si sposta di 1, [1] L -1+2, [2] si sposta di 2 ecc... 
-            for(j = 0; j < i-1; j++)
-            { 
-                if(r->AUTOSTRADA[i]->next == NULL)
-                    return;
-                r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
-            }
-            i++;
-        }
-        //si mette già a posto da sola. //r->AUTOSTRADA[cells] = NULL; //r->AUTOSTRADA[i]->next; la riga L all'inizio ha L elementi, alla fine ne avrà 0. 
+        r->len *= 2;
+        //scrolling per check.
     }
 }
 #pragma endregion
@@ -239,38 +221,59 @@ stazione * cerca_stazione(route * r, pint km){
             return curr;
     return NULL;
 }
+void cancella_testa(route * r, pint cell){
+    stazione * old = r->AUTOSTRADA[cell];
+    r->AUTOSTRADA[cell] = r->AUTOSTRADA[cell]->next;
+    if(r->AUTOSTRADA[cell] != NULL)
+        r->AUTOSTRADA[cell] ->prev = old ->prev;
+    else
+        r->AUTOSTRADA[0]->prev = old ->prev; //ho svuotato ultima riga.
+    old->prev->next = r->AUTOSTRADA[cell];
+    free(old);
+}
+void cancella_coda(route * r, stazione * ref){
+    r->AUTOSTRADA[0]->prev = ref ->prev;
+    ref->prev->next = NULL;
+    free(ref);
+}
 /// @brief Cancella l'elemento stazione passato come parametro da r->AUTOSTRADA
 /// @param r Autostrada di cancellazione
 /// @param elemento stazione da cancellare
 void cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
     //codice di cancellazione elemento
     //codice
-    if(cell != 0 || posizione != 0){
+    if(elemento ->next == NULL)
+        cancella_coda(r,elemento); //cancello massimo.
+    else if(posizione > 1){
         stazione * prima = elemento -> prev;
         stazione * dopo = elemento -> next;
         prima ->next = dopo;
-        if(dopo != NULL) //sto cancellando massimo?
-            dopo ->prev = prima;
-        else
-            r->AUTOSTRADA[0]->prev = prima;
+        dopo ->prev = prima;
+        free(elemento);
+    }
+    else if(posizione == 1){
+        r->AUTOSTRADA[cell] -> next = elemento -> next;
+        elemento->next->prev = r->AUTOSTRADA[cell];
         free(elemento);
     }
     else
-    {
-        stazione * massimo = max(r);
-        stazione * vecchio = r->AUTOSTRADA[0];
-        r->AUTOSTRADA[0] = r->AUTOSTRADA[0]->next;   
-        if(r->AUTOSTRADA[0] != NULL)
-            r->AUTOSTRADA[0]->prev = massimo;
-        if(elemento == vecchio) //controlla sia così...
-            free(vecchio);
-    }
+        cancella_testa(r,cell);
     //scrolling
     scrolling_back(r,cell,lastline(r));
     r->lastindex--;
 }
 void cancella_stazione(route * r, pint km){
     if(r->lastindex < 0) return;
+    if(km > max(r)->kms)
+    {
+        printf("\n Non c'è una stazione al km %d.\n", km);
+        return;
+    }
+    if(km < min(r)->kms)
+    {
+        printf("\n Non c'è una stazione al km %d.\n", km);
+        return;
+    }
     int cell = cellofelement(r,km);
     if(cell == -1)
         return;
@@ -316,14 +319,7 @@ void inserisci_tra_due(stazione*dainserire, stazione*precedente, stazione*succes
 /// @param cell Linea di inserimento.
 void inserimento(route * r, pint km, stazione * ref, pint cell){
     stazione * new = EXNOVOstation(km);
-    /*new ->prev = ref;
-    new ->next = ref->next;
-    if(new->next != NULL)
-        new->next->prev = new;
-    ref -> next = new;*/
-    inserisci_tra_due(new, ref, ref->next);
-    if(r->AUTOSTRADA[0] ->prev == ref) //è il massimo.
-        r->AUTOSTRADA[0]->prev = new; 
+    inserisci_tra_due(new, ref, ref->next); 
     //fase di scrolling-checking
     scrolling_forward(r,cell,lastline(r));
     r->lastindex++;
@@ -332,28 +328,45 @@ void inserimento(route * r, pint km, stazione * ref, pint cell){
 /// @brief Inserisce elemento nella struttura dati.
 /// @param r Autostrada alla quale inserire la stazione.
 /// @param km Chilometri della nuova stazione.
-/// @param ref Riferimento al futuro successore della nuova stazione.
-void inserimento_testa(route * r, pint km, stazione * ref, pint cell){
-    stazione * new = EXNOVOstation(km);
-    if(ref == r->AUTOSTRADA[cell])
+/// @param cell Cella nella quale inserire la nuova stazione. L'elemento di cella vecchio è nuovo successore.
+void inserimento_testa(route * r, pint km, pint cell){
+    stazione * ref = r->AUTOSTRADA[cell];
+    r->AUTOSTRADA[cell] = EXNOVOstation(km);
+    r->AUTOSTRADA[cell] -> next = ref;
+    if(ref != NULL)
     {
-        new ->next = ref;
-        new ->prev = ref ->prev;
-        if(r->AUTOSTRADA[cell] != NULL)
-            ref ->prev = new;
-        r->AUTOSTRADA[cell] = new;
-        //fase scrolling-checking
-        scrolling_forward(r,cell,lastline(r));
-        r->lastindex++;
-        Check(r);
+        if(ref -> prev != NULL)
+            if(cell != 0) //altrimenti la rendo circolare, con max collegato doppiamente a min.
+                ref -> prev -> next = r->AUTOSTRADA[cell];
+        r->AUTOSTRADA[cell] -> prev = ref -> prev;
+        ref->prev = r->AUTOSTRADA[cell];
     }
+    scrolling_forward(r,cell,lastline(r));
+    r->lastindex++;
+    Check(r);
+}
+//inserimento del massimo.
+void inserimento_coda(route * r, pint km, stazione * ref){
+    stazione* new = EXNOVOstation(km);
+    new -> prev = ref;
+    ref -> next = new;
+    new -> next = NULL;
+    r->AUTOSTRADA[0]->prev = new;
+    r->lastindex++;
+    Check(r);
 }
 void inserisci_stazione(route * r, int km){
     if(km < r->AUTOSTRADA[0]->kms) //inserisco minimo
     {
-        inserimento_testa(r,km, r->AUTOSTRADA[0], 0);
+        inserimento_testa(r,km,0);
         return;
     }
+    if(km > r->AUTOSTRADA[0]->prev->kms)//inserisco massimo
+    {
+        inserimento_coda(r,km,r->AUTOSTRADA[0]->prev);
+        return;
+    }
+    //inserisco in mezzo.
     int cell = cellofelement(r,km);
     if(cell == -1)
         return;
@@ -386,23 +399,33 @@ void inserisci_stazione(route * r, int km){
             i++;    
         }
     }
+    /*
+    SE curr->next == NULL, inserisco massimo => già fatto.
     if(i < nodes)// allora curr->next == NULL
         if(curr->kms > km)
             inserimento(r,km,curr->prev, cell);
         else
             inserimento(r,km,curr, cell); //sto inserendo massimo.
-    else //sono a fine riga, ma la stazione della nuova riga esiste.
-    {//qui sono certo che cell < lastline(r), altrimenti avrei tutto pieno.
-        pint newcell = cell+1;
-        inserimento_testa(r,km,r->AUTOSTRADA[newcell], newcell);
-        scrolling_forward(r,newcell,lastline(r));
-        r->lastindex++;
-        Check(r);
-    }
+    else
+    */
+    //sono a fine riga, ma la stazione della nuova riga esiste.
+    //sono in una riga intermedia.
+    if(i == nodes)//qui sono certo che cell < lastline(r), altrimenti avrei tutto pieno.
+        inserimento_testa(r,km,cell+1);
 }
 #pragma endregion
-
 #pragma endregion stazioni
+void Stampasequenziale(route * r){
+    stazione * curr = r->AUTOSTRADA[0];
+    while (curr->next != NULL)
+    {
+        printf("\n %d \n", curr->kms);
+        curr = curr->next;
+    }
+    printf("\n %d \n", curr->kms);
+}
+
+
 
 int main(){
     route * sixtysix = InitializeAUTOSTRADA(66);
