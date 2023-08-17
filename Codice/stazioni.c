@@ -102,6 +102,14 @@ void scrolling_back(route * r, pint start, pint stop){
     }
 }
 
+void scrollingresizing(route * r, pint lastcell){
+    pint nodes = autolen(r);
+    pint i, j; 
+    pint quanti = 0;
+    for(i = 0; i < lastcell; i++)
+        for(j = 0; j < i && r->AUTOSTRADA[i]->next != NULL; j++)
+            r->AUTOSTRADA[i] = r->AUTOSTRADA[i]->next;
+}
 
 void Check(route * r){    
     //ho esaurito vecchia linea
@@ -116,6 +124,7 @@ void Check(route * r){
         pint oldlast = r->len;
         r->len *= 2;
         //scrolling per check.
+        scrollingresizing(r,oldlast);
     }
 }
 #pragma endregion
