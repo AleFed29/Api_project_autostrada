@@ -408,19 +408,16 @@ void inserisci_stazione(route * r, int km){
             i++;    
         }
     }
-    /*
-    SE curr->next == NULL, inserisco massimo => già fatto.
+    //SE curr->next == NULL, inserisco massimo => già fatto.
     if(i < nodes)// allora curr->next == NULL
         if(curr->kms > km)
             inserimento(r,km,curr->prev, cell);
         else
             inserimento(r,km,curr, cell); //sto inserendo massimo.
-    else
-    */
-    //sono a fine riga, ma la stazione della nuova riga esiste.
+    else if(i == nodes)//qui sono certo che cell < lastline(r), altrimenti avrei tutto pieno.
+        inserimento_testa(r,km,cell+1);//sono a fine riga, ma la stazione della nuova riga esiste.
     //sono in una riga intermedia.
-    if(i == nodes)//qui sono certo che cell < lastline(r), altrimenti avrei tutto pieno.
-        inserimento_testa(r,km,cell+1);
+    
 }
 #pragma endregion
 #pragma endregion stazioni
