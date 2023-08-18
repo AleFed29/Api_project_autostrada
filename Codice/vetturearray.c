@@ -37,7 +37,7 @@ int search_index(head_vetture*h, int key,int start, int stop, int forinsertion){
                 return start;
             else
                 return -1;
-        if(mid == stop && h->first[mid] !=key)
+        if(mid == stop && h->first[mid] != key)
             if(forinsertion == 1)
                 return stop;
             else
@@ -53,14 +53,14 @@ int search_index(head_vetture*h, int key,int start, int stop, int forinsertion){
         return (int)((start+stop)/2); //indice più vicino.
     return -1;
 }
-int cerca(head_vetture*h, int key){
+int cerca_vetture(head_vetture*h, int key){
     if(key == 0)
         return (int)(h->countzero > 0) - 1;
     if(h->lastindex < 0)
         return -1;
     return search_index(h,key,0,h->lastindex,0);
 }
-int max(head_vetture*h){
+int max_vetture(head_vetture*h){
     if(h->lastindex < 0)
         if(h->countzero == 0)
             return -1;
@@ -68,7 +68,7 @@ int max(head_vetture*h){
             return 0;
     return h->first[h->lastindex];
 }
-int min(head_vetture*h){
+int min_vetture(head_vetture*h){
     if(h->countzero > 0)
         return 0;
     if(h->lastindex >= 0)
@@ -94,7 +94,7 @@ void slidingfor(head_vetture*h, int key, int firstvalue){
     for(i=firstvalue; i<= h->lastindex; i++)
         Swap(&(h->first[i+1]), &temp);
 }
-void insert(head_vetture*h, int key){
+void insert_vetture(head_vetture*h, int key){
     if(key == 0){
         h->countzero++;
         return;
@@ -105,7 +105,7 @@ void insert(head_vetture*h, int key){
         h->lastindex++;
         return;
     }
-    if(key > max(h))
+    if(key > max_vetture(h))
         h->first[h->lastindex+1] = key;
     else 
     {    
@@ -121,10 +121,23 @@ void insert(head_vetture*h, int key){
     h->lastindex++;
     Check_vetture(h);
 }
-void cancella(head_vetture*h, int key){
+void cancella_vetture(head_vetture*h, int key){
+    if(key == 0)
+        if(h->countzero > 0)
+        {
+            h->countzero--;
+            return;
+        }
+        else
+        {
+            printf("\n Non c'è una vettura con autonomia: %d", key);
+        }
     int i = search_index(h,key,0,h->lastindex,0);
     if(i == -1)
-        return;//andrà scritto messaggio.
+    {
+        printf("\n Non c'è una vettura con autonomia: %d", key);
+        return;
+    }
     while (i < h->lastindex){
         h->first[i] = h->first[i+1];
         i++;
@@ -135,23 +148,22 @@ void cancella(head_vetture*h, int key){
 int main()
 {
     head_vetture * h = Initialize();
-    insert(h,4);
-    insert(h,25);
+    insert_vetture(h,4);
+    insert_vetture(h,25);
     int i;
     for(i=0; i < 60; i+=3)
-        insert(h,i);
-    insert(h, 17);
-    insert(h,26);
+        insert_vetture(h,i);
+    insert_vetture(h, 17);
+    insert_vetture(h,26);
     printf("\n zero:%d", h->countzero);
     for(i=0; i<=h->lastindex; i++)
         printf("\n %d:%d",i, h->first[i]);
-    int index21 = cerca(h,21);
+    int index21 = cerca_vetture(h,21);
     printf("\n");
     printf("\n %d", h->first[index21]);
-    cancella(h,21);
-    int notindex21 = cerca(h,21);
+    cancella_vetture(h,21);
+    int notindex21 = cerca_vetture(h,21);
     printf("\n %d", notindex21);
-    printf("\n %d", h->first[index21]);
-    
+    printf("\n %d", h->first[index21]);    
     return 0;
 }
