@@ -68,6 +68,38 @@ void scrollascrollascrolla(route * r, pint stop)
 
 */
 
+//non finisce mai nell'ELSE perché altrimenti vorrebbe dire che ricerca binaria fallisce.
+            /*else
+            {
+                inserimento_testa(r, km, r->AUTOSTRADA[cell], cell);
+                return;
+            }*/
+
+
+int main(){
+    route * sixtysix = InitializeAUTOSTRADA(66);
+    pint cont;
+    /*for(cont = 1; cont < 120; cont+=2)
+        inserisci_stazione(sixtysix,cont);
+    */
+   //inserimento sequenziale non può essere effettuato riga per riga, ma elemento per elemento. Oppure lo si aggiusta.
+   //si aggiusta riferimento quando in una riga inserisco in mezzo a due elementi e devo scrollare.
+    inserisci_stazione(sixtysix,100);
+    inserisci_stazione(sixtysix,100000);
+    plot(sixtysix);
+    inserisci_stazione(sixtysix,2);
+    inserisci_stazione(sixtysix, 200);
+    stazione * nuova = cerca_stazione(sixtysix, 200);
+    printf("\n %d \n",nuova -> kms);
+    plot(sixtysix);
+    cancella_stazione(sixtysix, 3);
+    cancella_stazione(sixtysix, 100000);
+    plot(sixtysix);
+    pint i;
+    for(i = 0; i < 100; i++)
+        inserisci_stazione(sixtysix, 300 + 3*i);
+    plot(sixtysix);
+}
 
 
 

@@ -1,23 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
+
+#define MAXVETTURE 512 
 typedef unsigned int pint;
 #pragma region vetture
 typedef struct head
 {
     int * first;
-    int lastindex;
+    int lastindexv;
     int len;
     int countzero;
 } head_vetture;
 int numberofelement(head_vetture * h){
-    return h->lastindex+1+h->countzero;
+    return h->lastindexv + 1 + h->countzero;
 }
 head_vetture * Initialize(){
     head_vetture * h = (head_vetture *) malloc(sizeof(head_vetture));
     int * ptr = (int *) malloc(sizeof(int)*16);
     h->len = 16;
-    h->lastindex = -1;
+    h->lastindexv = -1;
     h->first = ptr;
     h->countzero = 0;
     return h;
@@ -56,27 +59,27 @@ int search_index(head_vetture*h, int key,int start, int stop, int forinsertion){
 int cerca_vetture(head_vetture*h, int key){
     if(key == 0)
         return (int)(h->countzero > 0) - 1;
-    if(h->lastindex < 0)
+    if(h->lastindexv < 0)
         return -1;
-    return search_index(h,key,0,h->lastindex,0);
+    return search_index(h,key,0,h->lastindexv,0);
 }
 int max_vetture(head_vetture*h){
-    if(h->lastindex < 0)
+    if(h->lastindexv < 0)
         if(h->countzero == 0)
             return -1;
         else
             return 0;
-    return h->first[h->lastindex];
+    return h->first[h->lastindexv];
 }
 int min_vetture(head_vetture*h){
     if(h->countzero > 0)
         return 0;
-    if(h->lastindex >= 0)
+    if(h->lastindexv >= 0)
         return h->first[0];
     return -1;
 }
 void Check_vetture(head_vetture*h){
-    if(h ->len - h->lastindex < 2)
+    if(h ->len - h->lastindexv < 2)
     {
         h->first = (int*)realloc(h->first, sizeof(int)*h->len*2);
         h->len = h->len*2;
@@ -91,58 +94,55 @@ void slidingfor(head_vetture*h, int key, int firstvalue){
     int i;
     int temp = h->first[firstvalue];
     h->first[firstvalue] = key;
-    for(i=firstvalue; i<= h->lastindex; i++)
+    for(i=firstvalue; i<= h->lastindexv; i++)
         Swap(&(h->first[i+1]), &temp);
 }
-void insert_vetture(head_vetture*h, int key){
+int insert_vetture(head_vetture*h, int key){
     if(key == 0){
         h->countzero++;
-        return;
+        return 1;
     }
-    if(h->lastindex == -1)
+    if(h->lastindexv == -1)
     {
         h->first[0] = key;
-        h->lastindex++;
-        return;
+        h->lastindexv++;
+        return 1;
     }
     if(key > max_vetture(h))
-        h->first[h->lastindex+1] = key;
+        h->first[h->lastindexv+1] = key;
     else 
     {    
-        int i = search_index(h,key,0,h->lastindex,1);
-        while (h->first[i]<= key && i <= h->lastindex)
+        int i = search_index(h,key,0,h->lastindexv,1);
+        while (h->first[i]<= key && i <= h->lastindexv)
             i++;
-        while (h->first[i] > key && i <= h->lastindex)
+        while (h->first[i] > key && i <= h->lastindexv)
             i--;
-        if(h->first[i] < key && i <= h->lastindex)
+        if(h->first[i] < key && i <= h->lastindexv)
             i++;
         slidingfor(h,key,i);
     }
-    h->lastindex++;
+    h->lastindexv++;
     Check_vetture(h);
+    return 1;
 }
-void cancella_vetture(head_vetture*h, int key){
+int cancella_vetture(head_vetture*h, int key){
     if(key == 0)
         if(h->countzero > 0)
         {
             h->countzero--;
-            return;
+            return 1;
         }
-        else
-        {
-            printf("\n Non c'è una vettura con autonomia: %d", key);
-        }
-    int i = search_index(h,key,0,h->lastindex,0);
-    if(i == -1)
-    {
-        printf("\n Non c'è una vettura con autonomia: %d", key);
-        return;
-    }
-    while (i < h->lastindex){
+        else //printf("\n Non c'è una vettura con autonomia: %d", key);
+            return 0;
+    int i = search_index(h,key,0,h->lastindexv,0);
+    if(i == -1) //printf("\n Non c'è una vettura con autonomia: %d", key);
+        return 0;
+    while (i < h->lastindexv){
         h->first[i] = h->first[i+1];
         i++;
     }
-    h->lastindex--;
+    h->lastindexv--;
+    return 1;
 }
 #pragma endregion vetture
 
@@ -204,20 +204,21 @@ route * InitializeAUTOSTRADA(pint km/*, rbhead * autos*/){
     r-> AUTOSTRADA[0] ->kms = km;
     r->AUTOSTRADA[0]->next = NULL;
     r->AUTOSTRADA[0]->prev = r->AUTOSTRADA[0];
+    r->AUTOSTRADA[0]->vetture = Initialize();
     //r->AUTOSTRADA[0] -> vetture = autos;
     r->lastindex = 0;
     return r;
 }
 
-stazione * initializestazione(pint km, head_vetture h/*,rbhead * autos*/){
+stazione * initializestazione(pint km, head_vetture* h/*,rbhead * autos*/){
     stazione * s = (stazione *) malloc(sizeof(stazione));
     s->kms = km;
     s->vetture = h;
     return s; 
 }
 stazione * EXNOVOstation(pint km/*,head_vetture * autos*/){
-    head_vetture h = Initialize();
-    return initializestazione(km/*,h*/);
+    head_vetture * h = Initialize();
+    return initializestazione(km,h);
 }
 #pragma endregion
 #pragma region MetodiScrollingRef
@@ -403,7 +404,7 @@ void cancella_coda(route * r, stazione * ref){
 /// @brief Cancella l'elemento stazione passato come parametro da r->AUTOSTRADA
 /// @param r Autostrada di cancellazione
 /// @param elemento stazione da cancellare
-void cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
+int cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
     //codice di cancellazione elemento
     //codice
     if(elemento ->next == NULL)
@@ -425,46 +426,37 @@ void cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
     //scrolling
     scrolling_back(r,cell,lastline(r));
     r->lastindex--;
+    return 1;
 }
-void cancella_stazione(route * r, pint km){
-    if(r->lastindex < 0) return;
-    if(km > max(r)->kms)
-    {
-        printf("\n Non c'è una stazione al km %d.\n", km);
-        return;
-    }
-    if(km < min(r)->kms)
-    {
-        printf("\n Non c'è una stazione al km %d.\n", km);
-        return;
-    }
+int cancella_stazione(route * r, pint km){
+    if(r->lastindex < 0) 
+        return 0;
+    if(km > max(r)->kms) //printf("\n Non c'è una stazione al km %d.\n", km);
+        return 0;
+    if(km < min(r)->kms) //printf("\n Non c'è una stazione al km %d.\n", km);
+        return 0;
     int cell = cellofelement(r,km);
     if(cell == -1)
-        return;
+        return 0;
     stazione * curr = r->AUTOSTRADA[cell];
     pint i = 0;
     pint nodes = autolen(r);
     while (i < nodes && curr ->next != NULL)
     {
-        if(curr->kms == km){
-            cancellazione(r,curr,cell, i);
-            return;
-        }
-        else if(curr ->kms > km){
-            printf("\n Non c'è una stazione al km %d.\n", km);
-            return;
-        }
+        if(curr->kms == km)
+            return cancellazione(r,curr,cell, i);
+        else if(curr ->kms > km) //printf("\n Non c'è una stazione al km %d.\n", km);   
+            return 0;
         else
         {
             curr = curr->next;
             i++;    
         }
     }
-    if(curr ->kms != km)
-        printf("\n Non c'è una stazione al km %d.\n", km); //in caso in cui km sia più grande di max->kms.
+    if(curr ->kms != km) //printf("\n Non c'è una stazione al km %d.\n", km);
+        return 0; //in caso in cui km sia più grande di max->kms.
     else
-        cancellazione(r,curr,cell, i);
-    return;
+        return cancellazione(r,curr,cell, i);
 }
 void inserisci_tra_due(stazione*dainserire, stazione*precedente, stazione*successivo){
     if(precedente ->next == successivo)
@@ -476,26 +468,28 @@ void inserisci_tra_due(stazione*dainserire, stazione*precedente, stazione*succes
             successivo ->prev = dainserire;
     }
 }
-/// @brief Inserisce elemento nella struttura dati.
+/// @brief Inserisce elemento nella struttura dati. Ritorna il riferimento alla stazione inserita.
 /// @param r Autostrada alla quale inserire la stazione.
 /// @param km Chilometri della nuova stazione.
 /// @param ref Riferimento al futuro predecessore della nuova stazione.
 /// @param cell Linea di inserimento.
-void inserimento(route * r, pint km, stazione * ref, pint cell){
+stazione * inserimento(route * r, pint km, stazione * ref, pint cell){
     stazione * new = EXNOVOstation(km);
     inserisci_tra_due(new, ref, ref->next); 
     //fase di scrolling-checking
     scrolling_forward(r,cell,lastline(r));
     r->lastindex++;
     Check(r);
+    return new;
 }
 /// @brief Inserisce elemento nella struttura dati.
 /// @param r Autostrada alla quale inserire la stazione.
 /// @param km Chilometri della nuova stazione.
 /// @param cell Cella nella quale inserire la nuova stazione. L'elemento di cella vecchio è nuovo successore.
-void inserimento_testa(route * r, pint km, pint cell){
+stazione * inserimento_testa(route * r, pint km, pint cell){
     stazione * ref = r->AUTOSTRADA[cell];
-    r->AUTOSTRADA[cell] = EXNOVOstation(km);
+    stazione * new = EXNOVOstation(km);
+    r->AUTOSTRADA[cell] = new;
     r->AUTOSTRADA[cell] -> next = ref;
     if(ref != NULL)
     {
@@ -508,55 +502,38 @@ void inserimento_testa(route * r, pint km, pint cell){
     scrolling_forward(r,cell,lastline(r));
     r->lastindex++;
     Check(r);
+    return new;
 }
 //inserimento del massimo.
-void inserimento_coda(route * r, pint km, stazione * ref){
-    stazione* new = EXNOVOstation(km);
+stazione * inserimento_coda(route * r, pint km, stazione * ref){
+    stazione * new = EXNOVOstation(km);
     new -> prev = ref;
     ref -> next = new;
     new -> next = NULL;
     r->AUTOSTRADA[0]->prev = new;
     r->lastindex++;
     Check(r);
+    return new;
 }
-void inserisci_stazione(route * r, int km){
+stazione * inserisci_stazione(route * r, int km){
     if(km < r->AUTOSTRADA[0]->kms) //inserisco minimo
-    {
-        inserimento_testa(r,km,0);
-        return;
-    }
+        return inserimento_testa(r,km,0);
     if(km > r->AUTOSTRADA[0]->prev->kms)//inserisco massimo
-    {
-        inserimento_coda(r,km,r->AUTOSTRADA[0]->prev);
-        return;
-    }
+        return inserimento_coda(r,km,r->AUTOSTRADA[0]->prev);
     //inserisco in mezzo.
     int cell = cellofelement(r,km);
     if(cell == -1)
-        return;
+        return NULL;
     stazione * curr = r->AUTOSTRADA[cell];
     pint i = 0;
     pint nodes = autolen(r);
     while (i < nodes && curr ->next != NULL)
     {
-        if(curr->kms == km)
-        {
-            printf("\n Già presente una stazione al km %d.\n", km);
-            return;
-        }
-        else if(curr ->kms > km){
+        if(curr->kms == km) //printf("\n Già presente una stazione al km %d.\n", km);   
+            return NULL;
+        else if(curr ->kms > km)
             if(i > 0)
-            {
-                inserimento(r,km,curr->prev, cell);        
-                return;
-            }
-            //non finisce mai nell'ELSE perché altrimenti vorrebbe dire che ricerca binaria fallisce.
-            /*else
-            {
-                inserimento_testa(r, km, r->AUTOSTRADA[cell], cell);
-                return;
-            }*/
-        }
+                return inserimento(r,km,curr->prev, cell);        
         else
         {
             curr = curr->next;
@@ -566,52 +543,95 @@ void inserisci_stazione(route * r, int km){
     //SE curr->next == NULL, inserisco massimo => già fatto.
     if(i < nodes)// allora curr->next == NULL
         if(curr->kms > km)
-            inserimento(r,km,curr->prev, cell);
+            return inserimento(r,km,curr->prev, cell);
         else
-            inserimento(r,km,curr, cell); //sto inserendo massimo.
+            return inserimento(r,km,curr, cell); //sto inserendo massimo.
     else if(i == nodes)//qui sono certo che cell < lastline(r), altrimenti avrei tutto pieno.
-        inserimento_testa(r,km,cell+1);//sono a fine riga, ma la stazione della nuova riga esiste.
+        return inserimento_testa(r,km,cell+1);//sono a fine riga, ma la stazione della nuova riga esiste.
     //sono in una riga intermedia.
     
 }
 #pragma endregion
 #pragma endregion stazioni
 
-#pragma region metodisupporto
-    void vetturaperstazione(route *r, int km, int vettura){
-        stazione * s = cerca_stazione(r,km);
-        insert_vetture(s->vetture, vettura);
-    }
-#pragma endregion
-
 #pragma region metodirichiesti
-    void aggiungi_stazione(route * r, int km, int * macchine){
-        inserisci_stazione(r,km);
-
+    void aggiungi_stazione(route * r, int km,int numeromacchine, int * macchine){
+        stazione * inserita = inserisci_stazione(r,km);
+        if(inserita == NULL){
+            printf("\n non aggiunta \n");
+            return;
+        }
+        pint i;
+        for(i = 0; i < numeromacchine; i++)
+            insert_vetture(inserita->vetture,macchine[i]);
+        printf("\n aggiunta \n");
     }
+    void demolisci_stazione(route * r, int km){
+        int feedback = cancella_stazione(r,km);
+        if(feedback == 0)
+            printf("\n non demolita \n");
+        else printf("\n demolita \n");
+    }
+    void aggiungi_auto(route *r, int km, int vettura){
+        stazione * s = cerca_stazione(r,km);
+        if(s == NULL) printf("\n non aggiunta \n");
+        else
+        {
+        if(numberofelement(s->vetture) < MAXVETTURE)
+            if(insert_vetture(s->vetture, vettura) == 1)
+                printf("\n aggiunta \n");
+            else
+                printf("\n non aggiunta \n");
+        else
+            printf("\n non aggiunta \n");
+        }
+    }
+    void rottama_auto(route * r, int km, int vettura){
+        stazione * s = cerca_stazione(r,km);
+        if(s == NULL) printf("\n non rottamata \n");
+        else
+        {
+        int feedback = cancella_vetture(s->vetture,vettura);
+        if(feedback == 1)
+            printf("\n rottamata \n");
+        else
+            printf("\n non rottamata \n");
+        }
+    }
+
 #pragma endregion
+void getcommand(char * command){
+    strcpy(command,"");
+    int i=0;
+    char c = getc();
+    while (i < strlen(command) && c != '\n')
+    {
+        command[i] = c;
+        c = getc();
+        i++;
+    }
+}
 
 int main(){
-    route * sixtysix = InitializeAUTOSTRADA(66);
-    pint cont;
-    /*for(cont = 1; cont < 120; cont+=2)
-        inserisci_stazione(sixtysix,cont);
+    /*char command [30];
+    while (read(STDIN_FILENO, buffer, &command, 30) > 0)
+    {
+        //code
+    }
     */
-   //inserimento sequenziale non può essere effettuato riga per riga, ma elemento per elemento. Oppure lo si aggiusta.
-   //si aggiusta riferimento quando in una riga inserisco in mezzo a due elementi e devo scrollare.
-    inserisci_stazione(sixtysix,100);
-    inserisci_stazione(sixtysix,100000);
-    plot(sixtysix);
-    inserisci_stazione(sixtysix,2);
-    inserisci_stazione(sixtysix, 200);
-    stazione * nuova = cerca_stazione(sixtysix, 200);
-    printf("\n %d \n",nuova -> kms);
-    plot(sixtysix);
-    cancella_stazione(sixtysix, 3);
-    cancella_stazione(sixtysix, 100000);
-    plot(sixtysix);
-    pint i;
-    for(i = 0; i < 100; i++)
-        inserisci_stazione(sixtysix, 300 + 3*i);
-    plot(sixtysix);
+    char command [30];
+    getcommand(command);
+    //devo vedere come si legge.
+
+    int dist = rand();
+    route * r = InitializeAUTOSTRADA(dist);
+    int macchine [4] = {0, 3, 56, 17};
+    aggiungi_stazione(r, dist+3, 4, macchine);
+    aggiungi_auto(r,dist,42);
+    rottama_auto(r, dist,3);
+    rottama_auto(r,dist+3,3);
+    demolisci_stazione(r, dist+3);
+    rottama_auto(r,dist+3,3);
+    demolisci_stazione(r, dist+1);
 }
+
