@@ -146,7 +146,6 @@ int cancella_vetture(head_vetture*h, int key){
 }
 #pragma endregion vetture
 
-
 #pragma region stazioni
 typedef struct station 
 {
@@ -600,29 +599,43 @@ stazione * inserisci_stazione(route * r, int km){
     }
 
 #pragma endregion
-void getcommand(char * command){
-    strcpy(command,"");
-    int i=0;
-    char c = getc();
-    while (i < strlen(command) && c != '\n')
-    {
-        command[i] = c;
-        c = getc();
-        i++;
-    }
+
+char ** split(char * command, char delimiter){
+    int len = strlen(command);
+    char ** stringarray = (char **) malloc(sizeof(char *)*len);
+    int i = 0,k = 0;
+    int j;
+    for(j = 0; j < len; j++)
+        if(command[j] == delimiter){
+            i++;
+            k = 0;
+        }
+        else
+            stringarray[i][k++] = command[j];
+    return stringarray;  
 }
-
 int main(){
-    /*char command [30];
-    while (read(STDIN_FILENO, buffer, &command, 30) > 0)
-    {
-        //code
-    }
-    */
     char command [30];
-    getcommand(command);
+    char ** commandoptions;
     //devo vedere come si legge.
-
+    while(feof(stdin))
+    {
+        int i;
+        fscanf(stdin,"%s\n", command);
+        commandoptions = split(command, ' ');
+        //commandoptions[1] dovrebbe essere kmstazione se non è la pianifica.
+        //quindi i successivi sono autonomie o altro in base al comando.
+        if(commandoptions[0] == "aggiungi-stazione")
+            i = -1;
+        else if (commandoptions[0] == "aggiungi-auto")
+            i = 0;
+        else if (commandoptions[0] == "demolisci-stazione")
+            i = 1;
+        else if (commandoptions[0] == "demolisci-auto")
+            i = 2;
+        else if (commandoptions[0] == "pianifica-percorso")
+            i = 3;
+    }
     int dist = rand();
     route * r = InitializeAUTOSTRADA(dist);
     int macchine [4] = {0, 3, 56, 17};
