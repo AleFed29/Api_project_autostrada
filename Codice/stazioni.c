@@ -553,6 +553,18 @@ stazione * inserisci_stazione(route * r, int km){
 #pragma endregion
 #pragma endregion stazioni
 
+#pragma region metodicomuni
+int autonomia_max_destra(stazione * curr){
+    return max_vetture(curr->vetture) + curr ->kms;
+}
+int autonomia_max_sinistra(stazione * curr){
+    int soglia = curr ->kms - max_vetture(curr->vetture);
+    if(soglia > 0)
+        return soglia;
+    return 0;
+} 
+#pragma endregion
+
 #pragma region metodirichiesti
     void aggiungi_stazione(route * r, int km,int numeromacchine, int * macchine){
         stazione * inserita = inserisci_stazione(r,km);
@@ -597,7 +609,48 @@ stazione * inserisci_stazione(route * r, int km){
             printf("\n non rottamata \n");
         }
     }
+    typedef struct percorso
+    {
+        pint km;
+        struct percorso * next;
+    }path;
+    stazione * Evil_station(stazione * curr, stazione * part, stazione * arr){
+        stazione * selected = curr;
+        curr = curr ->prev;
+        while(curr -> kms >= part -> kms){
+            if(autonomia_max_destra(curr) >= arr ->kms)
+                selected = curr;
+            curr = curr ->next;
+        }
+        return selected;
+    } 
 
+    path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
+        stazione * part = cerca_stazione(r,partenza);
+        stazione * arr = cerca_stazione(r,arrivo);
+        if(part == NULL || arr == NULL)
+            return;
+        path * per;
+        per ->next = NULL;
+        per ->km = arr ->kms;
+        stazione * curr = arr->prev;
+        stazione * last = arr;
+        while(curr ->kms >= part ->kms)
+        {
+            while (autonomia_max_destra(curr) >= last->kms) //finché la raggiungo.
+                curr = curr->prev;
+            if(curr ->kms >= part ->kms)
+            {
+                curr = Evil_station(curr ->next, part, arr);
+                path * new = (path *)malloc(sizeof(path));
+                new ->km = curr ->kms;
+                new ->next = per;
+                per = new;
+                last = curr;
+            }
+            curr = curr->prev;
+        }
+    }
 #pragma endregion
 
 char ** split(char * command, char delimiter){
