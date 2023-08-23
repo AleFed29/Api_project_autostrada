@@ -104,6 +104,15 @@ int main(){
 
 
 
-
+/*int dist = rand();
+    r = InitializeAUTOSTRADA(dist);
+    int macchine [4] = {0, 3, 56, 17};
+    aggiungi_stazione(r, dist+3, 4, macchine);
+    aggiungi_auto(r,dist,42);
+    rottama_auto(r, dist,3);
+    rottama_auto(r,dist+3,3);
+    demolisci_stazione(r, dist+3);
+    rottama_auto(r,dist+3,3);
+    demolisci_stazione(r, dist+1);*/
 
 
