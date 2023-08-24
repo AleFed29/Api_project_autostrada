@@ -116,3 +116,168 @@ int main(){
     demolisci_stazione(r, dist+1);*/
 
 
+int main(){
+    int begun = 0;
+    char command [100];
+    int phase = 0;
+    route * r = NULL;
+    while(!feof(stdin))
+    {
+        if(phase == 0){
+            if(fgets(command, 100,stdin) != NULL)
+                phase++;
+        }
+        else
+        {
+            if(phase == 1)
+            {
+                if(strcmp(command, "aggiungi-stazione") == 0)
+                {
+                    int kmstazione;
+                    int numeromacchine;
+                    if(scanf("%d", &kmstazione) == 0 || scanf("%d", &numeromacchine) == 0)
+                    {
+                        phase = 0;
+                        continue;
+                    }
+                    int i = 0;
+                    int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
+                    while (i < numeromacchine)
+                    {
+                        if(scanf("%d", &ptr[i]) == 0)
+                        {
+                            phase = 0;
+                            free(ptr);
+                            continue;
+                        }
+                        i++;
+                    }
+                    if(begun != 0 && r != NULL && i == numeromacchine){
+                        aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
+                    }
+                    else
+                    {
+                        if(i == numeromacchine){
+                        r = InitializeAUTOSTRADA(kmstazione);
+                        i = 0;
+                        while (i < numeromacchine)
+                        {
+                            insert_vetture(r->AUTOSTRADA[0]->vetture,ptr[i]);
+                            i++;
+                        }
+                        begun++;
+                        }
+                        else
+                        {
+                            printf("\n non aggiunta \n");
+                        }
+                    }
+                    free(ptr); //dovrebbe essere sicura.
+                }
+                else if (strcmp(command,"aggiungi-auto") == 0)
+                {
+                    int kmstazione;
+                    int kmauto;
+                    if(scanf("%d", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
+                    {
+                        phase = 0;
+                        continue;
+                    }
+                    if(begun != 0 && r != NULL)
+                        aggiungi_auto(r,kmstazione,kmauto);
+                }
+                else if (strcmp(command,"demolisci-stazione") == 0){
+                    int kmstazione;
+                    if(scanf("%d", &kmstazione) == 0)
+                    {
+                        phase = 0;
+                        continue;
+                    }
+                    if(begun != 0 && r != NULL)
+                        demolisci_stazione(r, kmstazione);
+                }
+                else if (strcmp(command,"rottama-auto") == 0)
+                {
+                    if(begun != 0 && r != NULL)
+                    {
+                        int kmstazione;
+                        int kmauto;
+                        if(scanf("%d", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
+                        {
+                            phase = 0;
+                            continue;
+                        }
+                        rottama_auto(r,kmstazione,kmauto);
+                    }   
+                }
+                else if(strcmp(command, "pianifica-percorso") == 0)
+                {
+                    if(begun != 0 && r != NULL){
+                        int p;
+                        int a;
+                        if(scanf("%d", &p) == 0 || scanf("%d", &a))
+                        {
+                            phase = 0;
+                            continue;
+                        }
+                        if(p < a){
+                            plot_path(pianifica_percorso_destra(r,p,a));
+                        }
+                        else if(p > a){
+                            plot_path(pianifica_percorso_dasinistra(r,p,a));
+                        }
+                        else{
+                            printf("\n nessun percorso \n");
+                        }
+                    }
+                    else
+                    {
+                        printf("\n nessun percorso \n");
+                    }
+                }
+                phase = 0;
+            }
+        }
+    }
+}
+
+
+/*
+int split(char * string, char delimiter,char ** dest){
+    int len = strlen(string);
+    int i;
+    int j = 0;
+    int k = 0;
+    for(i = 0; i < len; i++)
+    {
+        if(string[i] == delimiter)
+            j++;
+        else
+        {
+            dest[j] = (char*)malloc(sizeof(char)*20);
+            dest[j][k] = string[i];
+            k++;
+        }
+    }
+    return j;
+}
+int caststringtoint(char * string){
+    int len = strlen(string);
+    int i = 1;
+    int sum = (int)(string[0]);
+    while (i < len)
+    {
+        sum = sum*10 + (int)(string[i]);
+        i++;
+    }
+    return sum;
+}
+*/
+
+
+
+
+
+
+
+

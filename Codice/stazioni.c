@@ -573,271 +573,245 @@ int autonomia_max_sinistra(stazione * curr){
 //#pragma endregion
 
 //#pragma region metodirichiesti
-    void aggiungi_stazione(route * r, int km,int numeromacchine, int * macchine){
-        stazione * inserita = inserisci_stazione(r,km);
-        if(inserita == NULL){
-            printf("\n non aggiunta \n");
-            return;
-        }
-        pint i;
-        if(macchine != NULL)
-            for(i = 0; i < numeromacchine; i++)
-                insert_vetture(inserita->vetture,macchine[i]);
-        printf("\n aggiunta \n");
+void aggiungi_stazione(route * r, int km,int numeromacchine, int * macchine){
+    stazione * inserita = inserisci_stazione(r,km);
+    if(inserita == NULL){
+        printf("\n non aggiunta \n");
+        return;
     }
-    void demolisci_stazione(route * r, int km){
-        int feedback = cancella_stazione(r,km);
-        if(feedback == 0)
-            printf("\n non demolita \n");
-        else printf("\n demolita \n");
-    }
-    void aggiungi_auto(route *r, int km, int vettura){
-        stazione * s = cerca_stazione(r,km);
-        if(s == NULL) printf("\n non aggiunta \n");
-        else
-        {
-        if(numberofelement(s->vetture) < MAXVETTURE){
-            if(insert_vetture(s->vetture, vettura) == 1)
-                printf("\n aggiunta \n");
-            else
-                printf("\n non aggiunta \n");
-        }
-        else
-            printf("\n non aggiunta \n");
-        }
-    }
-    void rottama_auto(route * r, int km, int vettura){
-        stazione * s = cerca_stazione(r,km);
-        if(s == NULL) printf("\n non rottamata \n");
-        else
-        {
-        int feedback = cancella_vetture(s->vetture,vettura);
-        if(feedback == 1)
-            printf("\n rottamata \n");
-        else
-            printf("\n non rottamata \n");
-        }
-    }
-    typedef struct percorso
+    pint i;
+    if(macchine != NULL)
+        for(i = 0; i < numeromacchine; i++)
+            insert_vetture(inserita->vetture,macchine[i]);
+    printf("\n aggiunta \n");
+}
+void demolisci_stazione(route * r, int km){
+    int feedback = cancella_stazione(r,km);
+    if(feedback == 0)
+        printf("\n non demolita \n");
+    else printf("\n demolita \n");
+}
+void aggiungi_auto(route *r, int km, int vettura){
+    stazione * s = cerca_stazione(r,km);
+    if(s == NULL) printf("\n non aggiunta \n");
+    else
     {
-        pint km;
-        struct percorso * next;
-    }path;
-    stazione * Evil_station(stazione * curr, stazione * part, stazione * arr){
-        stazione * selected = curr;
-        curr = curr ->prev;
-        while(curr -> kms >= part -> kms){
-            if(autonomia_max_destra(curr) >= arr ->kms)
-                selected = curr;
-            curr = curr ->next;
-        }
-        return selected;
-    } 
+    if(numberofelement(s->vetture) < MAXVETTURE){
+        if(insert_vetture(s->vetture, vettura) == 1)
+            printf("\n aggiunta \n");
+        else
+            printf("\n non aggiunta \n");
+    }
+    else
+        printf("\n non aggiunta \n");
+    }
+}
+void rottama_auto(route * r, int km, int vettura){
+    stazione * s = cerca_stazione(r,km);
+    if(s == NULL) printf("\n non rottamata \n");
+    else
+    {
+    int feedback = cancella_vetture(s->vetture,vettura);
+    if(feedback == 1)
+        printf("\n rottamata \n");
+    else
+        printf("\n non rottamata \n");
+    }
+}
+typedef struct percorso
+{
+    pint km;
+    struct percorso * next;
+}path;
+stazione * Evil_station(stazione * curr, stazione * part, stazione * arr){
+    stazione * selected = curr;
+    curr = curr ->prev;
+    while(curr -> kms >= part -> kms){
+        if(autonomia_max_destra(curr) >= arr ->kms)
+            selected = curr;
+        curr = curr ->next;
+    }
+    return selected;
+} 
 
-    path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
-        stazione * part = cerca_stazione(r,partenza);
-        stazione * arr = cerca_stazione(r,arrivo);
-        if(part == NULL || arr == NULL)
-            return NULL;
-        path * per = (path *)malloc(sizeof(path));
-        per ->next = NULL;
-        per ->km = arr ->kms;
-        stazione * curr = arr->prev;
-        stazione * last = arr;
-        while(curr ->kms > part ->kms)
-        {
-            while (autonomia_max_destra(curr) >= last->kms) //finché la raggiungo.
-                curr = curr->prev;
-            if(curr ->kms > part ->kms)
-            {
-                curr = Evil_station(curr ->next, part, arr);
-                path * new = (path *)malloc(sizeof(path));
-                new ->km = curr ->kms;
-                new ->next = per;
-                per = new;
-                last = curr;
-            }
+path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
+    stazione * part = cerca_stazione(r,partenza);
+    stazione * arr = cerca_stazione(r,arrivo);
+    if(part == NULL || arr == NULL)
+        return NULL;
+    path * per = (path *)malloc(sizeof(path));
+    per ->next = NULL;
+    per ->km = arr ->kms;
+    stazione * curr = arr->prev;
+    stazione * last = arr;
+    while(curr ->kms > part ->kms)
+    {
+        while (autonomia_max_destra(curr) >= last->kms) //finché la raggiungo.
             curr = curr->prev;
+        if(curr ->kms > part ->kms)
+        {
+            curr = Evil_station(curr ->next, part, arr);
+            path * new = (path *)malloc(sizeof(path));
+            new ->km = curr ->kms;
+            new ->next = per;
+            per = new;
+            last = curr;
         }
-        if(autonomia_max_destra(part) < curr ->kms)
-            return NULL;
-        else
+        curr = curr->prev;
+    }
+    if(autonomia_max_destra(part) < curr ->kms)
+        return NULL;
+    else
+    {
+        path * new = (path *)malloc(sizeof(path));
+        new ->km =  part->kms;
+        new ->next = per;
+        return new;
+    }
+}
+path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
+    stazione * part = cerca_stazione(r,partenza);
+    stazione * arr = cerca_stazione(r,arrivo);
+    if(part == NULL || arr == NULL)
+        return NULL;
+    path * per = (path *)malloc(sizeof(path));
+    per ->next = NULL;
+    per ->km = arr ->kms;
+    stazione * curr = arr->prev;
+    stazione * last = arr;
+    while (curr -> kms > part->kms)
+    {
+        while (autonomia_max_sinistra(last) <= curr->kms)
+            curr = curr ->prev;
+        if(curr->kms > part->kms)
         {
             path * new = (path *)malloc(sizeof(path));
-            new ->km =  part->kms;
+            new ->km = curr ->kms;
             new ->next = per;
-            return new;
+            per = new;
+            last = curr;
         }
     }
-    path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
-        stazione * part = cerca_stazione(r,partenza);
-        stazione * arr = cerca_stazione(r,arrivo);
-        if(part == NULL || arr == NULL)
-            return NULL;
-        path * per = (path *)malloc(sizeof(path));
-        per ->next = NULL;
-        per ->km = arr ->kms;
-        stazione * curr = arr->prev;
-        stazione * last = arr;
-        while (curr -> kms > part->kms)
-        {
-            while (autonomia_max_sinistra(last) <= curr->kms)
-                curr = curr ->prev;
-            if(curr->kms > part->kms)
-            {
-                path * new = (path *)malloc(sizeof(path));
-                new ->km = curr ->kms;
-                new ->next = per;
-                per = new;
-                last = curr;
-            }
-        }
-        if(autonomia_max_sinistra(curr) > part->kms)
-            return NULL;
-        else
-        {
-            path * new = (path *)malloc(sizeof(path));
-            new ->km =  part->kms;
-            new ->next = per;
-            return new;
-        }
+    if(autonomia_max_sinistra(curr) > part->kms)
+        return NULL;
+    else
+    {
+        path * new = (path *)malloc(sizeof(path));
+        new ->km =  part->kms;
+        new ->next = per;
+        return new;
     }
-    void plot_path(path * p){
-        printf("\n");
-        if(p == NULL)
-        {
-            printf("\n nessun percorso \n");
-            return;
-        }
-        while (p->next != NULL){
-            printf("\t %d", p->km);
-            p = p->next;
-        }
-        printf("\n");
+}
+void plot_path(path * p){
+    printf("\n");
+    if(p == NULL)
+    {
+        printf("\n nessun percorso \n");
+        return;
     }
+    while (p->next != NULL){
+        printf("\t %d", p->km);
+        p = p->next;
+    }
+    printf("\n");
+}
 //#pragma endregion
-
 int main(){
-    int begun = 0;
-    char command[15];
-    int phase = 0;
+    char command [500];
+    char * token1;
+    char *end;
     route * r = NULL;
+    int phase = 0;
     while(!feof(stdin))
     {
-        if(phase == 0){
-            if(scanf("%s", command) == 1)
-                phase++;
-        }
-        else
+        if(fgets(command, 500,stdin) != NULL)
         {
-            if(phase == 1)
+            token1 = strtok(command, " ");
+            if(phase == 0 && strcmp(token1, "aggiungi-stazione") == 0)
             {
-                if(strcmp(command, "aggiungi-stazione") == 0)
+                token1 = strtok(NULL, " ");
+                int kmstazione = (int)strtol(token1, &end, 10);
+                token1 = strtok(NULL, " ");
+                int numeromacchine = (int)strtol(token1, &end, 10);;
+                int i = 0;
+                int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
+                while (i < numeromacchine)
                 {
-                    int kmstazione;
-                    int numeromacchine;
-                    if(scanf("%d", &kmstazione) == 0 || scanf("%d", &numeromacchine) == 0)
-                    {
-                        phase = 0;
-                        continue;
-                    }
-                    int i = 0;
-                    int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
+                    token1 = strtok(NULL, " ");
+                    ptr[i] = (int)strtol(token1, &end, 10);;  
+                    i++;
+                }
+                if(r != NULL && i == numeromacchine){
+                    aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
+                }
+                else
+                {
+                    if(i == numeromacchine){
+                    r = InitializeAUTOSTRADA(kmstazione);
+                    i = 0;
                     while (i < numeromacchine)
                     {
-                        if(scanf("%d", &ptr[i]) == 0)
-                        {
-                            phase = 0;
-                            free(ptr);
-                            continue;
-                        }
+                        insert_vetture(r->AUTOSTRADA[0]->vetture,ptr[i]);
                         i++;
                     }
-                    if(begun != 0 && r != NULL && i == numeromacchine){
-                        aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
                     }
                     else
                     {
-                        if(i == numeromacchine){
-                        r = InitializeAUTOSTRADA(kmstazione);
-                        i = 0;
-                        while (i < numeromacchine)
-                        {
-                            insert_vetture(r->AUTOSTRADA[0]->vetture,ptr[i]);
-                            i++;
-                        }
-                        begun++;
-                        }
-                        else
-                        {
-                            printf("\n non aggiunta \n");
-                        }
+                        printf("\n non aggiunta \n");
                     }
-                    free(ptr); //dovrebbe essere sicura.
                 }
-                else if (strcmp(command,"aggiungi-auto") == 0)
+                free(ptr); //dovrebbe essere sicura.
+            }
+            else if (strcmp(token1,"aggiungi-auto") == 0)
+            {
+                token1 = strtok(NULL, " ");
+                int kmstazione = (int)strtol(token1, &end, 10);
+                token1 = strtok(NULL, " ");
+                int kmauto = (int)strtol(token1, &end, 10);
+                if(r != NULL)
+                    aggiungi_auto(r,kmstazione,kmauto);
+            }
+            else if (strcmp(token1,"demolisci-stazione") == 0){
+                token1 = strtok(NULL, " ");
+                int kmstazione= (int)strtol(token1, &end, 10);
+                if(r != NULL)
+                    demolisci_stazione(r, kmstazione);
+            }
+            else if (strcmp(token1,"rottama-auto") == 0)
+            {
+                if(r != NULL)
                 {
-                    int kmstazione;
-                    int kmauto;
-                    if(scanf("%d", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
-                    {
-                        phase = 0;
-                        continue;
+                    token1 = strtok(NULL, " ");
+                    int kmstazione = (int)strtol(token1, &end, 10);
+                    token1 = strtok(NULL, " ");
+                    int kmauto = (int)strtol(token1, &end, 10);
+                    rottama_auto(r,kmstazione,kmauto);
+                }   
+            }
+            else if(strcmp(token1, "pianifica-percorso") == 0)
+            {
+                if(r != NULL){
+                    token1 = strtok(NULL, " ");
+                    int p = (int)strtol(token1, &end, 10);
+                    token1 = strtok(NULL, " ");
+                    int a = (int)strtol(token1, &end, 10);
+                    if(p < a){
+                        plot_path(pianifica_percorso_destra(r,p,a));
                     }
-                    if(begun != 0 && r != NULL)
-                        aggiungi_auto(r,kmstazione,kmauto);
-                }
-                else if (strcmp(command,"demolisci-stazione") == 0){
-                    int kmstazione;
-                    if(scanf("%d", &kmstazione) == 0)
-                    {
-                        phase = 0;
-                        continue;
+                    else if(p > a){
+                        plot_path(pianifica_percorso_dasinistra(r,p,a));
                     }
-                    if(begun != 0 && r != NULL)
-                        demolisci_stazione(r, kmstazione);
-                }
-                else if (strcmp(command,"rottama-auto") == 0)
-                {
-                    if(begun != 0 && r != NULL)
-                    {
-                        int kmstazione;
-                        int kmauto;
-                        if(scanf("%d", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
-                        {
-                            phase = 0;
-                            continue;
-                        }
-                        rottama_auto(r,kmstazione,kmauto);
-                    }   
-                }
-                else if(strcmp(command, "pianifica-percorso") == 0)
-                {
-                    if(begun != 0 && r != NULL){
-                        int p;
-                        int a;
-                        if(scanf("%d", &p) == 0 || scanf("%d", &a))
-                        {
-                            phase = 0;
-                            continue;
-                        }
-                        if(p < a){
-                            plot_path(pianifica_percorso_destra(r,p,a));
-                        }
-                        else if(p > a){
-                            plot_path(pianifica_percorso_dasinistra(r,p,a));
-                        }
-                        else{
-                            printf("\n nessun percorso \n");
-                        }
-                    }
-                    else
-                    {
+                    else{
                         printf("\n nessun percorso \n");
                     }
                 }
-                phase = 0;
+                else
+                {
+                    printf("\n nessun percorso \n");
+                }
             }
         }
     }
 }
+
+
