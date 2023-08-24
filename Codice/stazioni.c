@@ -716,115 +716,107 @@ int autonomia_max_sinistra(stazione * curr){
         printf("\n");
     }
 //#pragma endregion
-//#pragma region metodistringhe
-int split(char * command, char delimiter, char ** dest){
-    int len = strlen(command);
-    int i = 0,k = 0;
-    int j;
-    for(j = 0; j < len; j++){
-        if(command[j] == delimiter){
-            i++;
-            k = 0;
-        }
-        else
-        {
-            dest[i][k] = command[j];
-            k++;
-        }
-    }  
-    return i;
-}
-int stringcast(char * s){
-    int i = 0;
-    int sum = 1;
-    while (s[i] != '\0')
-    {
-        if(i == 0)
-            sum = (int)(s[i]);
-        else
-            sum = sum * 10 + (int)(s[i]);
-        i++;
-    }
-    return sum;
-}
-//#pragma endregion
+
 int main(){
     int begun = 0;
-    char command [30];
-    int len = strlen(command);
-    char ** commandoptions = (char **) malloc(sizeof(char *)*len);
+    char command[15];
+    int phase = 0;
     route * r = NULL;
-    //devo vedere come si legge.
-    while(feof(stdin))
+    while(!feof(stdin))
     {
-        fscanf(stdin,"%s\n", command);
-        int arraylen = split(command, ' ',commandoptions);
-        //commandoptions[1] dovrebbe essere kmstazione se non è la pianifica.
-        //quindi i successivi sono autonomie o altro in base al comando.
-        if(strcmp(commandoptions[0],"aggiungi-stazione") == 0)
+        if(phase == 0){
+            scanf("%s", command);
+            phase++;
+        }
+        else
         {
-            int kmstazione = stringcast(commandoptions[1]);
-            int numeroauto = stringcast(commandoptions[2]);
-            int * ptr = (int *) malloc(sizeof(int)*(arraylen-2));
-            if(numeroauto > 0){
-            pint k = 3;
-            while (k < arraylen){
-                ptr[k-3] = stringcast(commandoptions[k]);
-                k++;
-            }
-            }
-            else{
-                ptr = NULL;
-            }
-            if(begun != 0 && r == NULL){
-                aggiungi_stazione(r,kmstazione,arraylen, ptr);
-            }
-            else
+            if(phase == 1)
             {
-                r = InitializeAUTOSTRADA(kmstazione);
-                printf("\n aggiunta \n");
-                begun++;
+                if(strcmp(command, "aggiungi-stazione") == 0)
+                {
+                    int kmstazione;
+                    int numeromacchine;
+                    scanf("%d", &kmstazione);
+                    scanf("%d", &numeromacchine);
+                    int i = 0;
+                    int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
+                    while (i < numeromacchine)
+                    {
+                        scanf("%d", &ptr[i]);
+                        i++;
+                    }
+                    if(begun != 0 && r != NULL && i == numeromacchine){
+                        aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
+                    }
+                    else
+                    {
+                        if(i == numeromacchine){
+                        r = InitializeAUTOSTRADA(kmstazione);
+                        i = 0;
+                        while (i < numeromacchine)
+                        {
+                            insert_vetture(r->AUTOSTRADA[0]->vetture,ptr[i]);
+                            i++;
+                        }
+                        begun++;
+                        }
+                        else
+                        {
+                            printf("\n non aggiunta \n");
+                        }
+                    }
+                    free(ptr); //dovrebbe essere sicura.
+                }
+                else if (strcmp(command,"aggiungi-auto") == 0)
+                {
+                    int kmstazione;
+                    int kmauto;
+                    scanf("%d", &kmstazione);
+                    scanf("%d", &kmauto);
+                    if(begun != 0 && r != NULL)
+                        aggiungi_auto(r,kmstazione,kmauto);
+                }
+                else if (strcmp(command,"demolisci-stazione") == 0){
+                    int kmstazione;
+                    scanf("%d", &kmstazione);
+                    if(begun != 0 && r != NULL)
+                        demolisci_stazione(r, kmstazione);
+                }
+                else if (strcmp(command,"rottama-auto") == 0)
+                {
+                    if(begun != 0 && r != NULL)
+                    {
+                        int kmstazione;
+                        int kmauto;
+                        scanf("%d", &kmstazione);
+                        scanf("%d", &kmauto);
+                        rottama_auto(r,kmstazione,kmauto);
+                    }   
+                }
+                else if(strcmp(command, "pianifica-percorso") == 0)
+                {
+                    if(begun != 0 && r != NULL){
+                        int p;
+                        int a;
+                        scanf("%d", &p);
+                        scanf("%d", &a);
+                        if(p < a){
+                            plot_path(pianifica_percorso_destra(r,p,a));
+                        }
+                        else if(p > a){
+                            plot_path(pianifica_percorso_dasinistra(r,p,a));
+                        }
+                        else{
+                            printf("\n nessun percorso \n");
+                        }
+                    }
+                    else
+                    {
+                        printf("\n nessun percorso \n");
+                    }
+                }
+                phase = 0;
             }
         }
-        else if (strcmp(commandoptions[0],"aggiungi-auto") == 0){
-            int kmstazione = stringcast(commandoptions[1]);
-            int kmauto = stringcast(commandoptions[2]);
-            if(begun != 0 && r == NULL)
-                aggiungi_auto(r,kmstazione,kmauto);
-        }
-        else if (strcmp(commandoptions[0], "demolisci-stazione") == 0){
-            if(begun != 0 && r == NULL)
-                demolisci_stazione(r, stringcast(commandoptions[1]));
-        }
-        else if (strcmp(commandoptions[0],"rottama-auto") == 0)
-        {
-            if(begun != 0 && r == NULL)
-            {
-            int kmstazione = stringcast(commandoptions[1]);
-            int kmauto = stringcast(commandoptions[2]);
-            rottama_auto(r,kmstazione,kmauto);
-            }   
-        }
-        else if (strcmp(commandoptions[0],"pianifica-percorso") == 0)
-        {
-            if(begun != 0 && r == NULL){
-            int p = stringcast(commandoptions[1]);
-            int a = stringcast(commandoptions[2]);
-            if(p < a){
-                plot_path(pianifica_percorso_destra(r,p,a));
-            }
-            else if(p > a){
-                plot_path(pianifica_percorso_dasinistra(r,p,a));
-            }
-            else{
-                printf("\n nessun percorso \n");
-            }
-            }
-            else
-            {
-                printf("\n nessun percorso \n");
-            }
-        } 
     }
 }
-
