@@ -725,7 +725,7 @@ int main(){
     while(!feof(stdin))
     {
         if(phase == 0){
-            if(scanf("%s ", command) == 1)
+            if(scanf("%s", command) == 1)
                 phase++;
         }
         else
@@ -736,7 +736,7 @@ int main(){
                 {
                     int kmstazione;
                     int numeromacchine;
-                    if(scanf("%d ", &kmstazione) == 0 || scanf("%d", &numeromacchine) == 0)
+                    if(scanf("%d", &kmstazione) == 0 || scanf("%d", &numeromacchine) == 0)
                     {
                         phase = 0;
                         continue;
@@ -745,7 +745,7 @@ int main(){
                     int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
                     while (i < numeromacchine)
                     {
-                        if(scanf("%d ", &ptr[i]) == 0)
+                        if(scanf("%d", &ptr[i]) == 0)
                         {
                             phase = 0;
                             free(ptr);
@@ -779,7 +779,7 @@ int main(){
                 {
                     int kmstazione;
                     int kmauto;
-                    if(scanf("%d ", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
+                    if(scanf("%d", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
                     {
                         phase = 0;
                         continue;
@@ -789,7 +789,7 @@ int main(){
                 }
                 else if (strcmp(command,"demolisci-stazione") == 0){
                     int kmstazione;
-                    if(scanf("%d ", &kmstazione) == 0)
+                    if(scanf("%d", &kmstazione) == 0)
                     {
                         phase = 0;
                         continue;
@@ -803,7 +803,7 @@ int main(){
                     {
                         int kmstazione;
                         int kmauto;
-                        if(scanf("%d ", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
+                        if(scanf("%d", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
                         {
                             phase = 0;
                             continue;
