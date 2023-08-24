@@ -725,8 +725,8 @@ int main(){
     while(!feof(stdin))
     {
         if(phase == 0){
-            scanf("%s", command);
-            phase++;
+            if(scanf("%s ", command) == 1)
+                phase++;
         }
         else
         {
@@ -736,13 +736,21 @@ int main(){
                 {
                     int kmstazione;
                     int numeromacchine;
-                    scanf("%d", &kmstazione);
-                    scanf("%d", &numeromacchine);
+                    if(scanf("%d ", &kmstazione) == 0 || scanf("%d", &numeromacchine) == 0)
+                    {
+                        phase = 0;
+                        continue;
+                    }
                     int i = 0;
                     int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
                     while (i < numeromacchine)
                     {
-                        scanf("%d", &ptr[i]);
+                        if(scanf("%d ", &ptr[i]) == 0)
+                        {
+                            phase = 0;
+                            free(ptr);
+                            continue;
+                        }
                         i++;
                     }
                     if(begun != 0 && r != NULL && i == numeromacchine){
@@ -771,14 +779,21 @@ int main(){
                 {
                     int kmstazione;
                     int kmauto;
-                    scanf("%d", &kmstazione);
-                    scanf("%d", &kmauto);
+                    if(scanf("%d ", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
+                    {
+                        phase = 0;
+                        continue;
+                    }
                     if(begun != 0 && r != NULL)
                         aggiungi_auto(r,kmstazione,kmauto);
                 }
                 else if (strcmp(command,"demolisci-stazione") == 0){
                     int kmstazione;
-                    scanf("%d", &kmstazione);
+                    if(scanf("%d ", &kmstazione) == 0)
+                    {
+                        phase = 0;
+                        continue;
+                    }
                     if(begun != 0 && r != NULL)
                         demolisci_stazione(r, kmstazione);
                 }
@@ -788,8 +803,11 @@ int main(){
                     {
                         int kmstazione;
                         int kmauto;
-                        scanf("%d", &kmstazione);
-                        scanf("%d", &kmauto);
+                        if(scanf("%d ", &kmstazione) == 0 || scanf("%d", &kmauto) == 0)
+                        {
+                            phase = 0;
+                            continue;
+                        }
                         rottama_auto(r,kmstazione,kmauto);
                     }   
                 }
@@ -798,8 +816,11 @@ int main(){
                     if(begun != 0 && r != NULL){
                         int p;
                         int a;
-                        scanf("%d", &p);
-                        scanf("%d", &a);
+                        if(scanf("%d", &p) == 0 || scanf("%d", &a))
+                        {
+                            phase = 0;
+                            continue;
+                        }
                         if(p < a){
                             plot_path(pianifica_percorso_destra(r,p,a));
                         }
