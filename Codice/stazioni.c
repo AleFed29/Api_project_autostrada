@@ -18,10 +18,11 @@ int numberofelement(head_vetture * h){
 }
 head_vetture * Initialize(){
     head_vetture * h = (head_vetture *) malloc(sizeof(head_vetture));
-    int * ptr = (int *) malloc(sizeof(int)*16);
+    //int * ptr = (int *) malloc(sizeof(int)*16);
+    //h->first = ptr;
     h->len = 16;
     h->lastindexv = -1;
-    h->first = ptr;
+    h->first = (int *)malloc(sizeof(int)*16);
     h->countzero = 0;
     return h;
 }
@@ -204,13 +205,18 @@ stazione * min(route * r){
 route * InitializeAUTOSTRADA(pint km/*, rbhead * autos*/){
     route * r = (route *) malloc(sizeof(route));
     r->len = 4;
-    stazione ** try = (stazione **) malloc(sizeof(stazione*)*4);
-    r->AUTOSTRADA = try;
-    r->AUTOSTRADA[0] = (stazione *)malloc(sizeof(stazione*));
+    //stazione ** try = (stazione **) malloc(sizeof(stazione*)*4);
+    //if(try != NULL) r->AUTOSTRADA = try;
+    r->AUTOSTRADA = (stazione **) malloc(sizeof(stazione*)*4);
+    //stazione *try2 = (stazione *)malloc(sizeof(stazione*));
+    //if(try2 != NULL) r->AUTOSTRADA[0] = try2;
+    r->AUTOSTRADA[0] = (stazione *)malloc(sizeof(stazione));
+    if(r->AUTOSTRADA[0] != NULL){
     r-> AUTOSTRADA[0] ->kms = km;
     r->AUTOSTRADA[0]->next = NULL;
     r->AUTOSTRADA[0]->prev = r->AUTOSTRADA[0];
     r->AUTOSTRADA[0]->vetture = Initialize();
+    }
     //r->AUTOSTRADA[0] -> vetture = autos;
     r->lastindex = 0;
     return r;
@@ -623,13 +629,14 @@ typedef struct percorso
     pint km;
     struct percorso * next;
 }path;
+
 stazione * Evil_station(stazione * curr, stazione * part, stazione * arr){
     stazione * selected = curr;
     curr = curr ->prev;
-    while(curr -> kms >= part -> kms){
+    while(curr -> kms > part -> kms){
         if(autonomia_max_destra(curr) >= arr ->kms)
             selected = curr;
-        curr = curr ->next;
+        curr = curr ->prev;
     }
     return selected;
 } 
@@ -642,15 +649,22 @@ path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
     path * per = (path *)malloc(sizeof(path));
     per ->next = NULL;
     per ->km = arr ->kms;
-    stazione * curr = arr->prev;
-    stazione * last = arr;
-    while(curr ->kms > part ->kms)
+    if(autonomia_max_destra(part) >= arr ->kms)
     {
-        while (autonomia_max_destra(curr) >= last->kms) //finché la raggiungo.
+        path * new = (path *)malloc(sizeof(path));
+        new ->next = per;
+        new ->km = part ->kms;
+        return new;
+    }
+    stazione * curr = arr ->prev;
+    stazione * last = arr;
+    while (curr ->kms >= part->kms)
+    {
+        while(autonomia_max_destra(curr) >= last->kms)
             curr = curr->prev;
         if(curr ->kms > part ->kms)
         {
-            curr = Evil_station(curr ->next, part, arr);
+            curr = Evil_station(curr ->next, part, last);
             path * new = (path *)malloc(sizeof(path));
             new ->km = curr ->kms;
             new ->next = per;
@@ -702,6 +716,7 @@ path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
         return new;
     }
 }
+
 void plot_path(path * p){
     printf("\n");
     if(p == NULL)
@@ -717,28 +732,27 @@ void plot_path(path * p){
 }
 //#pragma endregion
 int main(){
-    char command [500];
+    char command [400];
     char * token1;
     char *end;
     route * r = NULL;
-    int phase = 0;
     while(!feof(stdin))
     {
-        if(fgets(command, 500,stdin) != NULL)
+        if(fgets(command, 400,stdin) != NULL)
         {
             token1 = strtok(command, " ");
-            if(phase == 0 && strcmp(token1, "aggiungi-stazione") == 0)
+            if(strcmp(token1, "aggiungi-stazione") == 0)
             {
                 token1 = strtok(NULL, " ");
                 int kmstazione = (int)strtol(token1, &end, 10);
                 token1 = strtok(NULL, " ");
-                int numeromacchine = (int)strtol(token1, &end, 10);;
+                int numeromacchine = (int)strtol(token1, &end, 10);
                 int i = 0;
                 int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
                 while (i < numeromacchine)
                 {
                     token1 = strtok(NULL, " ");
-                    ptr[i] = (int)strtol(token1, &end, 10);;  
+                    ptr[i] = (int)strtol(token1, &end, 10);  
                     i++;
                 }
                 if(r != NULL && i == numeromacchine){
@@ -746,14 +760,16 @@ int main(){
                 }
                 else
                 {
-                    if(i == numeromacchine){
-                    r = InitializeAUTOSTRADA(kmstazione);
-                    i = 0;
-                    while (i < numeromacchine)
+                    if(i == numeromacchine)
                     {
-                        insert_vetture(r->AUTOSTRADA[0]->vetture,ptr[i]);
-                        i++;
-                    }
+                        r = InitializeAUTOSTRADA(kmstazione);
+                        i = 0;
+                        while (i < numeromacchine)
+                        {
+                            insert_vetture(r->AUTOSTRADA[0]->vetture,ptr[i]);
+                            i++;
+                        }
+                        printf("\n aggiunta \n");
                     }
                     else
                     {
