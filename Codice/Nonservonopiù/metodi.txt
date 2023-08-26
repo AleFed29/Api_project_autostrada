@@ -360,5 +360,97 @@ path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
     }
 }
 
+
+
+
+
+
+stazione * Evil_station(stazione * curr, stazione * part, stazione * arr){
+    stazione * selected = curr;
+    curr = curr ->prev;
+    while(curr -> kms > part -> kms){
+        if(autonomia_max_destra(curr) >= arr ->kms)
+            selected = curr;
+        curr = curr ->prev;
+    }
+    return selected;
+} 
+
+path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
+    stazione * part = cerca_stazione(r,partenza);
+    stazione * arr = cerca_stazione(r,arrivo);
+    if(part == NULL || arr == NULL)
+        return NULL;
+    path * per = (path *)malloc(sizeof(path));
+    per ->next = NULL;
+    per ->km = arr ->kms;
+    if(autonomia_max_destra(part) >= arr ->kms)
+    {
+        path * new = (path *)malloc(sizeof(path));
+        new ->next = per;
+        new ->km = part ->kms;
+        return new;
+    }
+    stazione * curr = arr ->prev;
+    stazione * last = arr;
+    while (curr ->kms >= part->kms)
+    {
+        while(autonomia_max_destra(curr) >= last->kms)
+            curr = curr->prev;
+        if(curr ->kms > part ->kms)
+        {
+            curr = Evil_station(curr ->next, part, last);
+            path * new = (path *)malloc(sizeof(path));
+            new ->km = curr ->kms;
+            new ->next = per;
+            per = new;
+            last = curr;
+        }
+        curr = curr->prev;
+    }
+    if(autonomia_max_destra(part) < curr ->kms)
+        return NULL;
+    else
+    {
+        path * new = (path *)malloc(sizeof(path));
+        new ->km =  part->kms;
+        new ->next = per;
+        return new;
+    }
+}
+path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
+    stazione * part = cerca_stazione(r,partenza);
+    stazione * arr = cerca_stazione(r,arrivo);
+    if(part == NULL || arr == NULL)
+        return NULL;
+    path * per = (path *)malloc(sizeof(path));
+    per ->next = NULL;
+    per ->km = arr ->kms;
+    stazione * curr = arr->prev;
+    stazione * last = arr;
+    while (curr -> kms > part->kms)
+    {
+        while (autonomia_max_sinistra(last) <= curr->kms)
+            curr = curr ->prev;
+        if(curr->kms > part->kms)
+        {
+            path * new = (path *)malloc(sizeof(path));
+            new ->km = curr ->kms;
+            new ->next = per;
+            per = new;
+            last = curr;
+        }
+    }
+    if(autonomia_max_sinistra(curr) > part->kms)
+        return NULL;
+    else
+    {
+        path * new = (path *)malloc(sizeof(path));
+        new ->km =  part->kms;
+        new ->next = per;
+        return new;
+    }
+}
+
 */
 

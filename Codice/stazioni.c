@@ -630,17 +630,6 @@ typedef struct percorso
     struct percorso * next;
 }path;
 
-stazione * Evil_station(stazione * curr, stazione * part, stazione * arr){
-    stazione * selected = curr;
-    curr = curr ->prev;
-    while(curr -> kms > part -> kms){
-        if(autonomia_max_destra(curr) >= arr ->kms)
-            selected = curr;
-        curr = curr ->prev;
-    }
-    return selected;
-} 
-
 path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
     stazione * part = cerca_stazione(r,partenza);
     stazione * arr = cerca_stazione(r,arrivo);
@@ -649,39 +638,20 @@ path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
     path * per = (path *)malloc(sizeof(path));
     per ->next = NULL;
     per ->km = arr ->kms;
-    if(autonomia_max_destra(part) >= arr ->kms)
+    stazione * curr = part;
+    while(curr ->kms < arr->kms)
     {
+        while (autonomia_max_destra(curr) < per ->km)
+            curr = curr->next;
         path * new = (path *)malloc(sizeof(path));
-        new ->next = per;
-        new ->km = part ->kms;
-        return new;
+        new->next = per;
+        new ->km = curr->kms;
+        if(curr == part)
+            return new;
+        per = new;
+        curr = part;
     }
-    stazione * curr = arr ->prev;
-    stazione * last = arr;
-    while (curr ->kms >= part->kms)
-    {
-        while(autonomia_max_destra(curr) >= last->kms)
-            curr = curr->prev;
-        if(curr ->kms > part ->kms)
-        {
-            curr = Evil_station(curr ->next, part, last);
-            path * new = (path *)malloc(sizeof(path));
-            new ->km = curr ->kms;
-            new ->next = per;
-            per = new;
-            last = curr;
-        }
-        curr = curr->prev;
-    }
-    if(autonomia_max_destra(part) < curr ->kms)
-        return NULL;
-    else
-    {
-        path * new = (path *)malloc(sizeof(path));
-        new ->km =  part->kms;
-        new ->next = per;
-        return new;
-    }
+    return NULL;
 }
 path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
     stazione * part = cerca_stazione(r,partenza);
@@ -693,30 +663,32 @@ path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
     per ->km = arr ->kms;
     stazione * curr = arr->prev;
     stazione * last = arr;
-    while (curr -> kms > part->kms)
+    while (curr ->kms > part ->kms)
     {
-        while (autonomia_max_sinistra(last) <= curr->kms)
+        while (autonomia_max_sinistra(last) <= curr ->kms && curr ->kms > part ->kms)
             curr = curr ->prev;
-        if(curr->kms > part->kms)
+        if(curr == part)
         {
-            path * new = (path *)malloc(sizeof(path));
-            new ->km = curr ->kms;
-            new ->next = per;
-            per = new;
-            last = curr;
+            if(autonomia_max_sinistra(last) <= part->kms)
+            {
+                path * new = (path *)malloc(sizeof(path));
+                new->next = per;
+                new ->km = part ->kms;
+                return new;
+            }
+            else
+            {
+                return NULL;
+            }
         }
-    }
-    if(autonomia_max_sinistra(curr) > part->kms)
-        return NULL;
-    else
-    {
         path * new = (path *)malloc(sizeof(path));
-        new ->km =  part->kms;
-        new ->next = per;
-        return new;
+        new->next = per;
+        new ->km = curr->next->kms;
+        per = new;
+        last = curr->next;
     }
+    return NULL;
 }
-
 void plot_path(path * p){
     printf("\n");
     if(p == NULL)
@@ -728,6 +700,7 @@ void plot_path(path * p){
         printf("\t %d", p->km);
         p = p->next;
     }
+    printf("\t %d", p->km);
     printf("\n");
 }
 //#pragma endregion
