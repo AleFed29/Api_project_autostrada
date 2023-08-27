@@ -120,11 +120,11 @@ int insert_vetture(head_vetture*h, int key){
     else 
     {    
         int i = search_index(h,key,0,h->lastindexv,1);
-        while (h->first[i]<= key && i < h->lastindexv)
+        while (h->first[i]<= key && i <= h->lastindexv)
             i++;
-        while (h->first[i] > key && i <= h->lastindexv && i > 0)
+        while (h->first[i] > key && i <= h->lastindexv)
             i--;
-        if(h->first[i] < key && i < h->lastindexv)
+        if(h->first[i] < key && i <= h->lastindexv)
             i++;
         slidingfor(h,key,i);
     }
@@ -205,7 +205,11 @@ stazione * min(route * r){
 route * InitializeAUTOSTRADA(pint km/*, rbhead * autos*/){
     route * r = (route *) malloc(sizeof(route));
     r->len = 4;
+    //stazione ** try = (stazione **) malloc(sizeof(stazione*)*4);
+    //if(try != NULL) r->AUTOSTRADA = try;
     r->AUTOSTRADA = (stazione **) malloc(sizeof(stazione*)*4);
+    //stazione *try2 = (stazione *)malloc(sizeof(stazione*));
+    //if(try2 != NULL) r->AUTOSTRADA[0] = try2;
     r->AUTOSTRADA[0] = (stazione *)malloc(sizeof(stazione));
     if(r->AUTOSTRADA[0] != NULL){
     r-> AUTOSTRADA[0] ->kms = km;
@@ -267,10 +271,22 @@ void Check(route * r){
         r->AUTOSTRADA[lastline(r)] = max(r); //sto occupando nuova riga, sicuramente era NULL
     //inizializzo nuova linea.
     if(indexbycell(r, r->len) - r-> lastindex < 2){
-        r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2));
         pint oldlast = r->len;
+        if(r->len < 8){
+        r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len * 2));
         r->len *= 2;
         //scrolling per check.
+        }
+        else if(r->len < 27)
+        {
+            r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* ((pint)(r->len * 3/2)));
+            r->len = (pint)(r->len * 3/2);
+        }
+        else
+        {
+            r->AUTOSTRADA = (stazione **)realloc(r->AUTOSTRADA,sizeof(stazione*)* (r->len+1));
+            r->len++;
+        }
         scrollingresizing(r,oldlast);
     }
 }
@@ -721,7 +737,6 @@ int main(){
                 while (i < numeromacchine)
                 {
                     token1 = strtok(NULL, " ");
-                    if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
                     ptr[i] = (int)strtol(token1, &end, 10);  
                     i++;
                 }

@@ -721,7 +721,6 @@ int main(){
                 while (i < numeromacchine)
                 {
                     token1 = strtok(NULL, " ");
-                    if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
                     ptr[i] = (int)strtol(token1, &end, 10);  
                     i++;
                 }
