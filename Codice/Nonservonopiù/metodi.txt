@@ -454,3 +454,184 @@ path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
 
 */
 
+/*
+typedef struct percorso
+{
+    pint km;
+    struct percorso * next;
+}path;
+path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
+    stazione * part = cerca_stazione(r,partenza);
+    stazione * arr = cerca_stazione(r,arrivo);
+    if(part == NULL || arr == NULL)
+        return NULL;
+    path * per = (path *)malloc(sizeof(path));
+    per ->next = NULL;
+    per ->km = arr ->kms;
+    stazione * curr = part;
+    while(curr ->kms < arr->kms)
+    {
+        while (autonomia_max_destra(curr) < per ->km)
+            curr = curr->next;
+        path * new = (path *)malloc(sizeof(path));
+        new->next = per;
+        new ->km = curr->kms;
+        if(curr == part)
+            return new;
+        per = new;
+        curr = part;
+    }
+    return NULL;
+}
+path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
+    stazione * part = cerca_stazione(r,partenza);
+    stazione * arr = cerca_stazione(r,arrivo);
+    if(part == NULL || arr == NULL)
+        return NULL;
+    path * per = (path *)malloc(sizeof(path));
+    per ->next = NULL;
+    per ->km = arr ->kms;
+    stazione * curr = arr->prev;
+    stazione * last = arr;
+    while (curr ->kms > part ->kms)
+    {
+        while (autonomia_max_sinistra(last) <= curr ->kms && curr ->kms > part ->kms)
+            curr = curr ->prev;
+        if(curr == part)
+        {
+            if(autonomia_max_sinistra(last) <= part->kms)
+            {
+                path * new = (path *)malloc(sizeof(path));
+                new->next = per;
+                new ->km = part ->kms;
+                return new;
+            }
+            else
+            {
+                return NULL;
+            }
+        }
+        path * new = (path *)malloc(sizeof(path));
+        new->next = per;
+        new ->km = curr->next->kms;
+        per = new;
+        last = curr->next;
+    }
+    return NULL;
+}
+void plot_path(path * p){
+    printf("\n");
+    if(p == NULL)
+    {
+        printf("\n nessun percorso \n");
+        return;
+    }
+    while (p->next != NULL){
+        printf("\t %d", p->km);
+        p = p->next;
+    }
+    printf("\t %d", p->km);
+    printf("\n");
+}
+
+
+*/
+
+
+
+
+/*
+int autonom = autonomia_max_destra(part);
+    if(autonom >= arr ->kms){
+        //1tappa.
+        //return;
+    }
+    stazione * curr = part ->next;
+    while (curr->kms <= autonom)
+        curr = curr ->next;
+    stazione * curr2 = part ->next;
+    autonom = autonomia_max_destra(curr2);
+    do{
+    while (curr ->kms > autonom){
+        curr2 = curr2 ->next;
+        autonom = autonomia_max_destra(curr2);
+    }
+    stazione *  finoaqui = curr;
+    while(curr->kms <= autonom)
+        curr = curr ->next;//aggiungo percorso/ costruisco albero.
+    
+
+    }while (curr ->kms < arr->kms);
+    return NULL;
+
+
+    path * per = (path *)malloc(sizeof(path)); //radice
+    per ->next = NULL;
+    per ->brother = NULL;
+    per ->stationref = part;
+    stazione * curr = part ->next;
+    
+    stazione * prevlaststat = part->next;
+    stazione * laststat = generafigli(per, curr,autonom);
+    path * currp = per ->next;
+    path * lasthead = currp;
+    stazione * base = laststat -> next;
+    while(currp ->brother != NULL)
+    {
+        curr = base;
+        autonom = autonomia_max_destra(prevlaststat); 
+        if(autonom < laststat->next->kms)
+        {
+            currp = currp ->brother;
+            prevlaststat = prevlaststat ->next;
+            autonom = autonomia_max_destra(prevlaststat);
+        }
+        else
+        {
+            path * ref = currp;
+            stazione * prevcurr = curr ->prev;
+            while (curr ->kms < arr ->kms && prevcurr != curr)
+            {
+                prevcurr = curr;
+                curr = generafigli(currp, curr, autonom);
+                currp = currp ->next;
+            }
+            currp = ref ->brother;
+            prevlaststat = prevlaststat ->next;
+        }
+    }
+
+void AggiungiFiglio(path * p, stazione * elemento){
+    path * new = (path *)malloc(sizeof(path));
+    new ->stationref = elemento;
+    new ->brother = NULL;
+    new ->next = NULL;
+    p ->next = new;
+}
+void AggiungiSuccessore(path * p, stazione * elemento){
+    path * new = (path *)malloc(sizeof(path));
+    new ->stationref = elemento;
+    new ->brother = NULL;
+    new ->next = NULL;
+    p ->brother = new;
+}
+stazione * generafigli(path * p, stazione * curr, int auton){
+    path * currpath = p;
+    while (auton >= curr -> kms)
+    {
+        if(currpath -> next == NULL)
+        {
+            AggiungiFiglio(p, curr);
+            currpath = currpath -> next;
+        }
+        else
+        {
+            AggiungiSuccessore(currpath, curr);
+            currpath = currpath ->brother;
+        }
+        curr = curr ->next;
+    }
+    return curr ->prev;
+}
+
+*/
