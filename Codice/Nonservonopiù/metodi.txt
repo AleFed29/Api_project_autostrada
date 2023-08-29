@@ -634,4 +634,51 @@ stazione * generafigli(path * p, stazione * curr, int auton){
     return curr ->prev;
 }
 
+
+
+
+/*
+pint raggiuntocon = m ->raggiuntocon;
+    m = m;
+    path* p = InitializePath(part);
+    //path * segna = p;
+    //tutte le stazioni sono raggiungibili da una stazione, 
+    //altrimenti una stazione finirebbe per essere tale che tutte le più distanti sono irraggiungibili.
+    while (curr->kms < arr ->kms)
+    {
+        while(m->raggiuntocon == raggiuntocon && pos > raggiuntocon)
+        {
+            pos--;
+            m = m->prev;
+            curr = curr->next;
+            if(m->km == curr->kms && pos > raggiuntocon && autonomia_max_sinistra(curr) <= p->km)
+            {
+                AggiungiinCodapath(p,m);
+                raggiuntocon = m ->raggiuntocon;   
+            }
+        }
+        if(pos == raggiuntocon)
+        {
+            Aggiungi
+        }
+    }
+    
+    while (pos >  0)
+    {
+        while (pos > raggiuntocon)
+        {
+            if ()//in questo caso, voglio stazione più vicina da inizio dell'autostrada
+            {
+                /* code */
+            }
+            pos--;
+            if(m->km > part ->kms)
+                m = m ->prev;
+        }
+        AggiungiinCodapath(per,m);
+        raggiuntocon = m->raggiuntocon;
+    }
+
+*/
+
 */

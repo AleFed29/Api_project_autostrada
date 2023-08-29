@@ -700,49 +700,75 @@ void CancellaPath(path* p){
     }
     free(curr);
 }
+path * InitializePath(stazione * s){
+    path * per = (path*) malloc(sizeof(path));
+    per->km = s ->kms;
+    per ->next = NULL;
+    return per;
+}
 path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
     stazione * part = cerca_stazione(r,partenza);
     stazione * arr = cerca_stazione(r,arrivo);
     if(part == NULL || arr == NULL)
         return NULL;
-    path * per = (path*) malloc(sizeof(path));
-    per->km = arr ->kms;
-    per ->next = NULL;
-    if(autonomia_max_destra(part) >= arr->kms)
+    path * per = InitializePath(arr);
+    pint auton = autonomia_max_destra(part);
+    if(auton >= arr->kms)
     {
         path * elemento = (path*) malloc(sizeof(path));
         elemento ->km = part ->kms;
         elemento ->next = per;
         return elemento;
     }
-    pint pos = 1;
-    pint statnum = 1;
+    mark * m = InitializeMark(part);
+
     stazione * lastref = part;
     stazione * curr = part -> next;
-    mark * m = InitializeMark(part);
-    while (curr ->kms < arr ->kms)
+    pint pos = 2;//per arrivare qui.
+    pint statnum = 1;//parto da qui.
+
+    while(curr ->kms < arr->prev->kms)
     {
-        int auton = autonomia_max_destra(lastref);
-        while (curr->kms <= auton && curr->kms < arr->kms)
-        {
-            m = AggiungiinCodaMark(m, curr, statnum); //avvolgo il filo di Arianna.
+        while(curr ->kms <= auton){
+            m = AggiungiinCodaMark(m, curr, statnum);
             curr = curr->next;
             pos++;
         }
-        if(lastref == curr)//stazione irraggiungibile da tutte le precedenti.
+        if(lastref == curr)//nessuna stazione precedente raggiunge curr. 
             return NULL;
         statnum++;
         lastref = lastref ->next;
+        auton = autonomia_max_destra(lastref);
     }
-    mark * voto = m;
-    printf("\n DEBUG, %d: \n ", pos);
-    while (voto ->km > part ->kms)
+    while (curr->kms < arr ->kms)//penultima
     {
-        printf("\t %d:%d \t", voto ->km, voto->raggiuntocon);
-        voto = voto ->prev;
+    if(curr ->kms <= auton){
+        m = AggiungiinCodaMark(m, curr, statnum);
+        curr = curr->next;
+        pos++;
     }
-    printf("\t %d:%d \t", voto ->km, voto->raggiuntocon);
-    printf("\n ENDDEBUG \n ");
+    else
+    {
+        statnum++;
+        lastref = lastref ->next;
+        auton = autonomia_max_destra(lastref);
+    }
+    if(lastref == curr)//stesso di prima.
+        return NULL;
+    }
+    while (lastref ->kms < arr ->kms && m->km != arr->kms)//o inserisco, o non c'è.
+    {
+        if(arr->kms <= auton)
+            m = AggiungiinCodaMark(m, arr, statnum);
+        else
+        {
+            statnum++;
+            lastref = lastref ->next;
+            auton = autonomia_max_destra(lastref);
+        }
+    }
+    if(m->km != arr->kms)
+        return NULL;
     pint raggiuntocon = m ->raggiuntocon;//riavvolgo il filo di Arianna.
     while (pos >  0)
     {
@@ -766,41 +792,82 @@ path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
     stazione * arr = cerca_stazione(r,arrivo);
     if(part == NULL || arr == NULL)
         return NULL;
-    pint pos = 1;
-    pint statnum = 1;
-    stazione * lastref = part;
-    stazione * curr = part -> next;
-    mark * m = InitializeMark(part);
-    path * per = (path*) malloc(sizeof(path));
-    per->km = arr ->kms;
-    per ->next = NULL;
-    int auton = autonomia_max_sinistra(curr);
-    while (curr ->kms < arr ->kms)
+    
+    path* per = InitializePath(part);
+    if(autonomia_max_sinistra(arr) <= part->kms) //caso base.
     {
-        while (auton <= lastref->kms) 
+        path * elemento = (path*) malloc(sizeof(path));
+        elemento ->km = part ->kms;
+        per ->next = elemento;
+        return per;
+    }
+    pint pos = 2;
+    pint statnum = 1;
+    stazione * lastref = arr;
+    stazione * curr = arr -> prev;
+    mark * m = InitializeMark(arr);
+    int auton = autonomia_max_sinistra(lastref);
+    while (curr ->kms > part->next->kms)
+    {
+        while (auton <= curr ->kms)
         {
-            m = AggiungiinCodaMark(m, curr, statnum);
-            curr = curr->next;
+            AggiungiinCodaMark(m,curr,statnum);
             pos++;
-            auton = autonomia_max_sinistra(curr);
+            curr = curr ->prev;
         }
-        if(lastref == curr)//stazione irraggiungibile da tutte le precedenti.
+        if(lastref->kms <= curr->kms)//non raggiungo.
             return NULL;
         statnum++;
-        lastref = lastref ->next;
+        lastref = lastref ->prev;
+        auton = autonomia_max_sinistra(lastref);
     }
-    pint raggiuntocon = m ->raggiuntocon;
-    while (pos >  0)
+    while (curr ->kms > part ->kms)//penultima
     {
-        while (pos > raggiuntocon)
-        {
-            pos--;
-            if(m->km > part ->kms)
-                m = m ->prev;
+        if(auton <= curr->kms){
+            m = AggiungiinCodaMark(m, curr, statnum);
+            curr = curr->prev;
+            pos++;
         }
-        AggiungiinCodapath(per,m);
-        raggiuntocon = m->raggiuntocon;
+        else
+        {
+            statnum++;
+            lastref = lastref ->prev;
+            auton = autonomia_max_sinistra(lastref);
+        }
+    if(lastref == curr)//stesso di prima.
+        return NULL;
     }
+    while (lastref ->kms > part ->kms && m->km != part->kms)
+    {
+        if(auton <= part ->kms)
+            m = AggiungiinCodaMark(m, part, statnum);
+        else
+        {
+            statnum++;
+            lastref = lastref ->prev;
+            auton = autonomia_max_sinistra(lastref);
+        }
+    }
+    if(m->km != part->kms)
+        return NULL;
+    //trova stazioni che permettono di avere percorso migliore, dentro a m.
+    /*Codice di selezione delle stazioni.*/
+    pint raggiungo = m->raggiuntocon;
+    curr = part; //c'è corrispondenza biunivoca tra m e curr:
+    // ogni stazione ha almeno una stazione che la raggiunge, 
+    //se il percorso migliore è in m, altrimenti una stazione sarebbe irraggiungibile a tutte le precedenti. 
+    while(m->km > part ->kms)
+    {
+        curr = curr -> next;
+        pos--;
+        m = m->prev;
+        if(autonomia_max_sinistra(curr) <= per->km && pos > raggiungo)
+        {
+            per = AggiungiinTestapath(per,m);
+            raggiungo = m->raggiuntocon;
+        }
+    }
+    //fine
     CancellaMark(m);
     if(per ->km == arr->kms)
         return per;
@@ -844,7 +911,7 @@ int main(){
                 while (i < numeromacchine)
                 {
                     token1 = strtok(NULL, " ");
-                    if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
+                    //if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
                     ptr[i] = (int)strtol(token1, &end, 10);  
                     i++;
                 }
