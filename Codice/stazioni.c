@@ -628,90 +628,51 @@ Caso base.
 Altrimenti.
 Finché da partenza arrivo a una stazione, la aggiungo nei children.
 Registro ultima stazione raggiungibile.
-
-Guardo i figli.
-Se non raggiungo la successiva dell'ultima raggiungibile, cancello e cambio ref children.
-Altrimenti, aggiungo nei children del child.
-Confronti percorsi. Prima volta che arrivi alla fine, hai percorso.
-return.
 */
-typedef struct marcatura
-{
-    pint km;
-    struct marcatura * next;
-    struct marcatura * prev;
-    pint raggiuntocon;
-}mark;
 typedef struct percorso
 {
     pint km;
     struct percorso * next;
 }path;
-path * AggiungiinTestapath(path* p, mark* percorso){
-    path * elemento = (path*) malloc(sizeof(path));
-    elemento ->km = percorso->km;
-    elemento->next = p;
-    return elemento;
-}
-void AggiungiinCodapath(path* p, mark* marca){
-    path * elemento = (path*) malloc(sizeof(path));
-    elemento ->km = marca->km;
-    elemento ->next = NULL;
-    path * curr = p;
-    while (curr ->next != NULL)
-        curr = curr ->next;
-    curr ->next = elemento;
-}
-mark * AggiungiinCodaMark(mark * m, stazione * s, pint marcatura){
-    mark * elemento = (mark*) malloc(sizeof(mark));
-    elemento ->km = s->kms;
-    elemento ->raggiuntocon = marcatura;
-    elemento ->prev = m;
-    m ->next = elemento;
-    elemento ->next = NULL;
-    return elemento;
-}
-mark * InitializeMark(stazione * s){
-    mark * m = (mark*) malloc(sizeof(mark));
-    m->next = NULL;
-    m->km = s->kms;
-    m ->raggiuntocon = 0;
-    return m;
-}
-void CancellaMark(mark * m){
-    mark * curr = m;
-    mark * dacanc = m;
-    while (curr ->next != NULL)
-    {
-        curr = curr->next;
-        free(dacanc);
-        dacanc = curr;
-    }
-    free(curr);
-}
-void CancellaPath(path* p){
-    path * curr = p;
-    path * dacanc = p;
-    while (curr ->next != NULL)
-    {
-        curr = curr->next;
-        free(dacanc);
-        dacanc = curr;
-    }
-    free(curr);
-}
+
+typedef struct node
+{
+    stazione * this;
+    struct node * raggiuntoda;
+    struct node * next;
+}nodoarianna;
+
 path * InitializePath(stazione * s){
     path * per = (path*) malloc(sizeof(path));
     per->km = s ->kms;
     per ->next = NULL;
     return per;
 }
-path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
+nodoarianna * NewNode(stazione * s){
+    nodoarianna * new = (nodoarianna *) malloc(sizeof(nodoarianna));
+    new ->this = s;
+    new ->raggiuntoda = NULL;
+    new ->next = NULL;
+}
+nodoarianna * AnnodainCoda(nodoarianna * n, stazione * elemento, nodoarianna * raggiunto){
+    nodoarianna * elem = NewNode(elemento);
+    elem ->raggiuntoda = raggiunto;
+    n ->next = elem;
+    return elem;
+}
+path * AggiungiinTestaPath(path * p, stazione * s){
+    path * elemento = InitializePath(s);
+    elemento ->next = p;
+    return elemento;
+}
+path * pianinfica_percorso_destra(route * r, pint partenza, pint arrivo){
     stazione * part = cerca_stazione(r,partenza);
     stazione * arr = cerca_stazione(r,arrivo);
     if(part == NULL || arr == NULL)
         return NULL;
     path * per = InitializePath(arr);
+    if(arr == part)
+        return per;
     pint auton = autonomia_max_destra(part);
     if(auton >= arr->kms)
     {
@@ -720,159 +681,119 @@ path * pianifica_percorso_destra(route * r, int partenza, int arrivo){
         elemento ->next = per;
         return elemento;
     }
-    mark * m = InitializeMark(part);
-
-    stazione * lastref = part;
-    stazione * curr = part -> next;
-    pint pos = 2;//per arrivare qui.
-    pint statnum = 1;//parto da qui.
-
-    while(curr ->kms < arr->prev->kms)
+    stazione * curr = part->next;
+    nodoarianna * n = NewNode(part);
+    nodoarianna * lastnode = n;
+    
+    while (curr ->kms < arr->kms)
     {
-        while(curr ->kms <= auton){
-            m = AggiungiinCodaMark(m, curr, statnum);
-            curr = curr->next;
-            pos++;
+        if(curr->kms <= auton)
+        {
+            n = AnnodainCoda(n,curr, lastnode);
+            curr = curr ->next;
         }
-        if(lastref == curr)//nessuna stazione precedente raggiunge curr. 
-            return NULL;
-        statnum++;
-        lastref = lastref ->next;
-        auton = autonomia_max_destra(lastref);
-    }
-    while (curr->kms < arr ->kms)//penultima
-    {
-    if(curr ->kms <= auton){
-        m = AggiungiinCodaMark(m, curr, statnum);
-        curr = curr->next;
-        pos++;
-    }
-    else
-    {
-        statnum++;
-        lastref = lastref ->next;
-        auton = autonomia_max_destra(lastref);
-    }
-    if(lastref == curr)//stesso di prima.
-        return NULL;
-    }
-    while (lastref ->kms < arr ->kms && m->km != arr->kms)//o inserisco, o non c'è.
-    {
-        if(arr->kms <= auton)
-            m = AggiungiinCodaMark(m, arr, statnum);
         else
         {
-            statnum++;
-            lastref = lastref ->next;
-            auton = autonomia_max_destra(lastref);
+            if(lastnode ->next == NULL)
+                return NULL;
+            lastnode = lastnode ->next;
+            auton = autonomia_max_destra(lastnode->this);
         }
     }
-    if(m->km != arr->kms)
-        return NULL;
-    pint raggiuntocon = m ->raggiuntocon;//riavvolgo il filo di Arianna.
-    while (pos >  0)
+    while (lastnode ->this->kms < arr->kms)
     {
-        while (pos > raggiuntocon && pos > 0)
+        if(arr ->kms <= auton)
         {
-            pos--;
-            if(m->km > part ->kms)
-                m = m ->prev;
+            n = AnnodainCoda(n,arr, lastnode);
+            break;
         }
-        if(per ->km != m ->km)
-            per = AggiungiinTestapath(per,m);
-        raggiuntocon = m->raggiuntocon;
+        else
+        {
+            if(lastnode ->next == NULL)
+                return NULL;
+            lastnode = lastnode ->next;
+            auton = autonomia_max_destra(lastnode->this);
+        }
     }
-    CancellaMark(m);
-    if(per ->km == part ->kms)
+    if(n->this != arr)
+        return NULL;
+    n = n->raggiuntoda;//riavvolgo il filo di Arianna
+    while (n->raggiuntoda != NULL)
+    {
+       per = AggiungiinTestaPath(per, n->this);
+       n = n->raggiuntoda;
+    }
+    if(n ->this == part){
+        per = AggiungiinTestaPath(per, n->this);
         return per;
+    }
     return NULL;
 }
-path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
+pianinfica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     stazione * part = cerca_stazione(r,partenza);
     stazione * arr = cerca_stazione(r,arrivo);
     if(part == NULL || arr == NULL)
         return NULL;
-    
-    path* per = InitializePath(part);
-    if(autonomia_max_sinistra(arr) <= part->kms) //caso base.
+    path * per = InitializePath(arr);
+    if(arr == part)
+        return per;
+    pint auton = autonomia_max_sinistra(arrivo);
+    if(auton <= part ->kms)
     {
         path * elemento = (path*) malloc(sizeof(path));
         elemento ->km = part ->kms;
         per ->next = elemento;
+        elemento ->next = NULL;
         return per;
     }
-    pint pos = 2;
-    pint statnum = 1;
-    stazione * lastref = arr;
-    stazione * curr = arr -> prev;
-    mark * m = InitializeMark(arr);
-    int auton = autonomia_max_sinistra(lastref);
-    while (curr ->kms > part->next->kms)
+    stazione * curr = part ->next;
+    nodoarianna * n = NewNode(part);
+    nodoarianna * lastnode = n;
+    auton = autonomia_max_sinistra(curr);
+    while (curr ->kms < arr ->kms)
     {
-        while (auton <= curr ->kms)
+        if(auton <= lastnode ->this ->kms)
         {
-            AggiungiinCodaMark(m,curr,statnum);
-            pos++;
-            curr = curr ->prev;
-        }
-        if(lastref->kms <= curr->kms)//non raggiungo.
-            return NULL;
-        statnum++;
-        lastref = lastref ->prev;
-        auton = autonomia_max_sinistra(lastref);
-    }
-    while (curr ->kms > part ->kms)//penultima
-    {
-        if(auton <= curr->kms){
-            m = AggiungiinCodaMark(m, curr, statnum);
-            curr = curr->prev;
-            pos++;
+            n = AnnodainCoda(n,curr,lastnode);
+            curr = curr->next;
+            auton = autonomia_max_sinistra(curr);
         }
         else
         {
-            statnum++;
-            lastref = lastref ->prev;
-            auton = autonomia_max_sinistra(lastref);
+            if(lastnode ->next == NULL)
+                return NULL;
+            lastnode = lastnode->next;
         }
-    if(lastref == curr)//stesso di prima.
-        return NULL;
     }
-    while (lastref ->kms > part ->kms && m->km != part->kms)
+    while (lastnode ->this->kms < arr->kms)
     {
-        if(auton <= part ->kms)
-            m = AggiungiinCodaMark(m, part, statnum);
+        if(auton  <= lastnode->this->kms)
+        {
+            n = AnnodainCoda(n,arr,lastnode);
+            break;
+        }
         else
         {
-            statnum++;
-            lastref = lastref ->prev;
-            auton = autonomia_max_sinistra(lastref);
+            if(lastnode ->next == NULL)
+                return NULL;
+            lastnode = lastnode->next;
         }
     }
-    if(m->km != part->kms)
+    if(n->this != arr)
         return NULL;
-    //trova stazioni che permettono di avere percorso migliore, dentro a m.
-    /*Codice di selezione delle stazioni.*/
-    pint raggiungo = m->raggiuntocon;
-    curr = part; //c'è corrispondenza biunivoca tra m e curr:
-    // ogni stazione ha almeno una stazione che la raggiunge, 
-    //se il percorso migliore è in m, altrimenti una stazione sarebbe irraggiungibile a tutte le precedenti. 
-    while(m->km > part ->kms)
+    n = n->raggiuntoda;
+    while (n->raggiuntoda != NULL)
     {
-        curr = curr -> next;
-        pos--;
-        m = m->prev;
-        if(autonomia_max_sinistra(curr) <= per->km && pos > raggiungo)
-        {
-            per = AggiungiinTestapath(per,m);
-            raggiungo = m->raggiuntocon;
-        }
+        //AggiungiinCodaPath(per, n);
+        n = n->raggiuntoda; //proseguendo verso destra, trovo stazioni più vicine all'inizio della strada con la possibilità di essere raggiunte.
     }
-    //fine
-    CancellaMark(m);
-    if(per ->km == arr->kms)
+    if(n ->this == part){
+        //per = AggiungiinCodaPath(per, n->this);
         return per;
+    }
     return NULL;
 }
+
 void plot_path(path * p){
     printf("\n");
     if(p == NULL)
@@ -880,14 +801,20 @@ void plot_path(path * p){
         printf("\n nessun percorso \n");
         return;
     }
-    path * curr = p;
-    while (curr->next != NULL){
-        printf("\t %d", curr->km);
-        curr = curr->next;
+    if(p->next == NULL)
+    {
+        printf("\t %d\n", p->km);
+        free(p);
+        return;
     }
-    printf("\t %d", curr->km);
+    path * dacanc = p;
+    while (p->next != NULL){
+        printf("\t %d", p->km);
+        p = p->next;
+    }
+    printf("\t %d", p->km);
     printf("\n");
-    CancellaPath(p);
+    CancellaPath(dacanc);
 }
 //#pragma endregion
 int main(){
@@ -911,7 +838,7 @@ int main(){
                 while (i < numeromacchine)
                 {
                     token1 = strtok(NULL, " ");
-                    //if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
+                    if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
                     ptr[i] = (int)strtol(token1, &end, 10);  
                     i++;
                 }
@@ -975,7 +902,7 @@ int main(){
                         plot_path(pianifica_percorso_destra(r,p,a));
                     }
                     else if(p > a){
-                        plot_path(pianifica_percorso_dasinistra(r,p,a));
+                        plot_path(pianifica_percorso_sinistra(r,a,p));
                     }
                     else{
                         printf("\n nessun percorso \n");
@@ -989,5 +916,3 @@ int main(){
         }
     }
 }
-
-
