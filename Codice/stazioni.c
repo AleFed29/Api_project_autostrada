@@ -653,6 +653,7 @@ nodoarianna * NewNode(stazione * s){
     new ->this = s;
     new ->raggiuntoda = NULL;
     new ->next = NULL;
+    return new;
 }
 nodoarianna * AnnodainCoda(nodoarianna * n, stazione * elemento, nodoarianna * raggiunto){
     nodoarianna * elem = NewNode(elemento);
@@ -665,7 +666,36 @@ path * AggiungiinTestaPath(path * p, stazione * s){
     elemento ->next = p;
     return elemento;
 }
-path * pianinfica_percorso_destra(route * r, pint partenza, pint arrivo){
+void AggiungiinCodaPath(path * p, stazione * s){
+    path * curr = p;
+    path * elemento = InitializePath(s);
+    while (curr ->next != NULL)
+        curr = curr ->next;
+    curr ->next = elemento;
+}
+void CancellaPath(path* p){
+    path * curr = p;
+    path * dacanc = p;
+    while (curr ->next != NULL)
+    {
+        curr = curr->next;
+        free(dacanc);
+        dacanc = curr;
+    }
+    free(curr);
+}
+void CancellaNodes(nodoarianna * n){
+    nodoarianna * m = n;
+    nodoarianna * dacanc = n;
+    while (m ->next != NULL)
+    {
+        m = m->next;
+        free(dacanc);
+        dacanc = m;
+    }
+    free(m);
+}
+path * pianifica_percorso_destra(route * r, pint partenza, pint arrivo){
     stazione * part = cerca_stazione(r,partenza);
     stazione * arr = cerca_stazione(r,arrivo);
     if(part == NULL || arr == NULL)
@@ -674,7 +704,7 @@ path * pianinfica_percorso_destra(route * r, pint partenza, pint arrivo){
     if(arr == part)
         return per;
     pint auton = autonomia_max_destra(part);
-    if(auton >= arr->kms)
+    if(auton >= arr->kms) //caso base.
     {
         path * elemento = (path*) malloc(sizeof(path));
         elemento ->km = part ->kms;
@@ -725,11 +755,13 @@ path * pianinfica_percorso_destra(route * r, pint partenza, pint arrivo){
     }
     if(n ->this == part){
         per = AggiungiinTestaPath(per, n->this);
+        CancellaNodes(n);
         return per;
     }
+    CancellaNodes(n);
     return NULL;
 }
-pianinfica_percorso_sinistra(route * r, pint partenza, pint arrivo){
+path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     stazione * part = cerca_stazione(r,partenza);
     stazione * arr = cerca_stazione(r,arrivo);
     if(part == NULL || arr == NULL)
@@ -737,7 +769,7 @@ pianinfica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     path * per = InitializePath(arr);
     if(arr == part)
         return per;
-    pint auton = autonomia_max_sinistra(arrivo);
+    pint auton = autonomia_max_sinistra(arr);
     if(auton <= part ->kms)
     {
         path * elemento = (path*) malloc(sizeof(path));
@@ -781,16 +813,39 @@ pianinfica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     }
     if(n->this != arr)
         return NULL;
+    lastnode = n;
     n = n->raggiuntoda;
+    curr = arr->prev;
+    pint foundbefore = 0;
+    auton = autonomia_max_sinistra(arr);
     while (n->raggiuntoda != NULL)
     {
-        //AggiungiinCodaPath(per, n);
-        n = n->raggiuntoda; //proseguendo verso destra, trovo stazioni più vicine all'inizio della strada con la possibilità di essere raggiunte.
+        while (curr ->kms > n->this->kms && foundbefore == 0)
+        {
+            if(auton <= curr ->kms)
+            {
+                while (lastnode ->this->kms > curr->kms && lastnode ->next != NULL)
+                    lastnode = lastnode ->next;
+                AggiungiinCodaPath(per,lastnode->this);
+                n = lastnode ->raggiuntoda;
+                auton = autonomia_max_sinistra(lastnode->this);
+                foundbefore = 1;
+            }
+            curr = curr->prev;
+        }
+        if(foundbefore == 0){
+            AggiungiinCodaPath(per, n->this);
+            n = n->raggiuntoda; //proseguendo verso destra, trovo stazioni più vicine all'inizio della strada con la possibilità di essere raggiunte.
+        }
+        else
+            foundbefore = 0;
     }
     if(n ->this == part){
-        //per = AggiungiinCodaPath(per, n->this);
+        AggiungiinCodaPath(per, n->this);
+        CancellaNodes(n);
         return per;
     }
+    CancellaNodes(n);
     return NULL;
 }
 
@@ -833,14 +888,13 @@ int main(){
                 int kmstazione = (int)strtol(token1, &end, 10);
                 token1 = strtok(NULL, " ");
                 int numeromacchine = (int)strtol(token1, &end, 10);
-                int i = 0;
+                int i;
                 int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
-                while (i < numeromacchine)
+                for(i = 0; i < numeromacchine; i++)
                 {
                     token1 = strtok(NULL, " ");
                     if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
                     ptr[i] = (int)strtol(token1, &end, 10);  
-                    i++;
                 }
                 if(r != NULL && i == numeromacchine){
                     aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
