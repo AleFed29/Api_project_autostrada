@@ -873,28 +873,37 @@ void plot_path(path * p){
 }
 //#pragma endregion
 int main(){
-    char command [400];
-    char * token1;
+    //char command [400];
+    char command[20];
+    //char * token1;
     char *end;
     route * r = NULL;
     while(!feof(stdin))
     {
-        if(fgets(command, 400,stdin) != NULL)
+        //if(fgets(command, 400,stdin) != NULL)
+        if(scanf("%s ", command))
         {
-            token1 = strtok(command, " ");
-            if(strcmp(token1, "aggiungi-stazione") == 0)
+            command = strtok(command, " ");
+            //token1 = strtok(command, " ");
+            //if(strcmp(token1, "aggiungi-stazione") == 0)
+            if(strcmp(command, "aggiungi-stazione") == 0)
             {
-                token1 = strtok(NULL, " ");
+                /*token1 = strtok(NULL, " ");
                 int kmstazione = (int)strtol(token1, &end, 10);
                 token1 = strtok(NULL, " ");
-                int numeromacchine = (int)strtol(token1, &end, 10);
+                int numeromacchine = (int)strtol(token1, &end, 10);*/
+                int kmstazione=0;
+                int numeromacchine=0;
+                if(scanf("%d ", &kmstazione) && scanf("%d ", &numeromacchine)){
                 int i;
                 int * ptr = (int *) malloc(sizeof(int)*numeromacchine);
                 for(i = 0; i < numeromacchine; i++)
                 {
-                    token1 = strtok(NULL, " ");
-                    if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
-                    ptr[i] = (int)strtol(token1, &end, 10);  
+                    //token1 = strtok(NULL, " ");
+                    //if(token1 == NULL) break;//controlla perché potrebbe dar problemi...
+                    //ptr[i] = (int)strtol(token1, &end, 10);
+                    if(!scanf("%d ", &ptr[i]))
+                        break;
                 }
                 if(r != NULL && i == numeromacchine){
                     aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
@@ -918,9 +927,12 @@ int main(){
                     }
                 }
                 free(ptr); //dovrebbe essere sicura.
+                }
             }
-            else if (strcmp(token1,"aggiungi-auto") == 0)
+            //else if (strcmp(token1,"aggiungi-auto") == 0)
+            else if (strcmp(command,"aggiungi-auto") == 0)
             {
+                //continua...
                 token1 = strtok(NULL, " ");
                 int kmstazione = (int)strtol(token1, &end, 10);
                 token1 = strtok(NULL, " ");
@@ -928,13 +940,15 @@ int main(){
                 if(r != NULL)
                     aggiungi_auto(r,kmstazione,kmauto);
             }
-            else if (strcmp(token1,"demolisci-stazione") == 0){
+            //else if (strcmp(token1,"demolisci-stazione") == 0){
+            else if (strcmp(command,"demolisci-stazione") == 0){
                 token1 = strtok(NULL, " ");
                 int kmstazione= (int)strtol(token1, &end, 10);
                 if(r != NULL)
                     demolisci_stazione(r, kmstazione);
             }
-            else if (strcmp(token1,"rottama-auto") == 0)
+            //else if (strcmp(token1,"rottama-auto") == 0)
+            else if (strcmp(command,"rottama-auto") == 0)
             {
                 if(r != NULL)
                 {
@@ -945,7 +959,8 @@ int main(){
                     rottama_auto(r,kmstazione,kmauto);
                 }   
             }
-            else if(strcmp(token1, "pianifica-percorso") == 0)
+            //else if(strcmp(token1, "pianifica-percorso") == 0)
+            else if(strcmp(command, "pianifica-percorso") == 0)            
             {
                 if(r != NULL){
                     token1 = strtok(NULL, " ");
