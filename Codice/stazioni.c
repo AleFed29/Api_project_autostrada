@@ -813,6 +813,7 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     }
     if(n->this != arr)
         return NULL;
+    //da qui non va bene... correggi, perché devo riavvolgere il filo, non lo spaghetto.
     lastnode = n;
     n = n->raggiuntoda;
     curr = arr->prev;
@@ -876,14 +877,14 @@ int main(){
     //char command [400];
     char command[20];
     //char * token1;
-    char *end;
+    //char *end;
     route * r = NULL;
     while(!feof(stdin))
     {
         //if(fgets(command, 400,stdin) != NULL)
         if(scanf("%s ", command))
         {
-            command = strtok(command, " ");
+            //command = strtok(command, " ");
             //token1 = strtok(command, " ");
             //if(strcmp(token1, "aggiungi-stazione") == 0)
             if(strcmp(command, "aggiungi-stazione") == 0)
@@ -933,40 +934,52 @@ int main(){
             else if (strcmp(command,"aggiungi-auto") == 0)
             {
                 //continua...
-                token1 = strtok(NULL, " ");
-                int kmstazione = (int)strtol(token1, &end, 10);
-                token1 = strtok(NULL, " ");
-                int kmauto = (int)strtol(token1, &end, 10);
+                //token1 = strtok(NULL, " ");
+                //int kmstazione = (int)strtol(token1, &end, 10);
+                int kmstazione = 0;
+                int kmauto = 0;
+                if(scanf("%d" , &kmstazione) && scanf("%d " , &kmauto)){
+                //token1 = strtok(NULL, " ");
+                //int kmauto = (int)strtol(token1, &end, 10);
                 if(r != NULL)
                     aggiungi_auto(r,kmstazione,kmauto);
+                }
             }
             //else if (strcmp(token1,"demolisci-stazione") == 0){
             else if (strcmp(command,"demolisci-stazione") == 0){
-                token1 = strtok(NULL, " ");
-                int kmstazione= (int)strtol(token1, &end, 10);
+                //token1 = strtok(NULL, " ");
+                int kmstazione = 0;
+                //int kmstazione= (int)strtol(token1, &end, 10);
+                if(scanf("%d", &kmstazione)){
                 if(r != NULL)
                     demolisci_stazione(r, kmstazione);
+                }
             }
             //else if (strcmp(token1,"rottama-auto") == 0)
             else if (strcmp(command,"rottama-auto") == 0)
             {
                 if(r != NULL)
                 {
-                    token1 = strtok(NULL, " ");
-                    int kmstazione = (int)strtol(token1, &end, 10);
-                    token1 = strtok(NULL, " ");
-                    int kmauto = (int)strtol(token1, &end, 10);
-                    rottama_auto(r,kmstazione,kmauto);
+                    //token1 = strtok(NULL, " ");
+                    //int kmstazione = (int)strtol(token1, &end, 10);
+                    //token1 = strtok(NULL, " ");
+                    //int kmauto = (int)strtol(token1, &end, 10);
+                    int kmstazione = 0;
+                    int kmauto = 0;
+                    if(scanf("%d " , &kmstazione) && scanf("%d " , &kmauto))
+                        rottama_auto(r,kmstazione,kmauto);
                 }   
             }
             //else if(strcmp(token1, "pianifica-percorso") == 0)
             else if(strcmp(command, "pianifica-percorso") == 0)            
             {
                 if(r != NULL){
-                    token1 = strtok(NULL, " ");
-                    int p = (int)strtol(token1, &end, 10);
-                    token1 = strtok(NULL, " ");
-                    int a = (int)strtol(token1, &end, 10);
+                    int a = 0, p = 0;
+                    //token1 = strtok(NULL, " ");
+                    //int p = (int)strtol(token1, &end, 10);
+                    //token1 = strtok(NULL, " ");
+                    //int a = (int)strtol(token1, &end, 10);
+                    if(scanf("%d " , &p) && scanf("%d " , &a)){
                     if(p < a){
                         plot_path(pianifica_percorso_destra(r,p,a));
                     }
@@ -975,6 +988,7 @@ int main(){
                     }
                     else{
                         printf("\n nessun percorso \n");
+                    }
                     }
                 }
                 else
