@@ -813,33 +813,44 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     }
     if(n->this != arr)
         return NULL;
+    //CORREGGI!
     //da qui non va bene... correggi, perché devo riavvolgere il filo, non lo spaghetto.
-    lastnode = n;
+    curr = n->this->prev; //arr->prev.
+    auton = autonomia_max_sinistra(n->this);//arr
+    lastnode = n;//lastnode indica la stazione che raggiunge n. Tra lastnode -> this e lastnode -> raggiuntoda->this ci può essere una stazione da percorso migliore.
+    stazione * limit = lastnode->raggiuntoda->this;
+    //ho raccolto i dati dell'arrivo, quindi "arrotolo".
     n = n->raggiuntoda;
-    curr = arr->prev;
     pint foundbefore = 0;
-    auton = autonomia_max_sinistra(arr);
-    while (n->raggiuntoda != NULL)
+    stazione * candidata = NULL;
+    while (n ->raggiuntoda != NULL) //finché non arrivo alla partenza.
     {
-        while (curr ->kms > n->this->kms && foundbefore == 0)
+        while(curr ->kms > limit ->kms && foundbefore == 0)//cerco tra lastnode -> this e lastnode -> raggiuntoda->this la mia possibile stazione.
         {
-            if(auton <= curr ->kms)
+            if(auton <= curr ->kms) //se trovo la stazione, devo comunque vedere che non ce ne sia una più vicina alla partenza.
             {
-                while (lastnode ->this->kms > curr->kms && lastnode ->next != NULL)
-                    lastnode = lastnode ->next;
-                AggiungiinCodaPath(per,lastnode->this);
-                n = lastnode ->raggiuntoda;
-                auton = autonomia_max_sinistra(lastnode->this);
+                candidata = curr;//intanto me la salvo...
+            }
+            if(candidata != NULL && curr->prev->kms == limit ->kms)//se ho trovato una stazione, 
+            {
                 foundbefore = 1;
             }
-            curr = curr->prev;
+            if(foundbefore == 1){
+                while (lastnode ->this->kms > candidata->kms && lastnode ->next != NULL)
+                    lastnode = lastnode ->next;//torno indietro (legati da arrivo a partenza).
+                AggiungiinCodaPath(per,candidata);//candidata DEVE essere == a lastnode -> this.
+                n = lastnode ->raggiuntoda;//poi ripeto il tutto.
+                auton = autonomia_max_sinistra(lastnode->this);//sempre l'equiv.
+                limit = lastnode ->raggiuntoda->this;
+            }
+            else
+            {
+                curr = curr->prev;
+            }
         }
-        if(foundbefore == 0){
-            AggiungiinCodaPath(per, n->this);
-            n = n->raggiuntoda; //proseguendo verso destra, trovo stazioni più vicine all'inizio della strada con la possibilità di essere raggiunte.
+        if(candidata == NULL){
+          AggiungiinCodaPath(per,lastnode ->this);  
         }
-        else
-            foundbefore = 0;
     }
     if(n ->this == part){
         AggiungiinCodaPath(per, n->this);
