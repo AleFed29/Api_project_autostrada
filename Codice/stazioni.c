@@ -640,8 +640,8 @@ typedef struct node
     stazione * this;
     struct node * raggiuntoda;
     struct node * next;
+    struct node * prev;
 }nodoarianna;
-
 path * InitializePath(stazione * s){
     path * per = (path*) malloc(sizeof(path));
     per->km = s ->kms;
@@ -659,6 +659,7 @@ nodoarianna * AnnodainCoda(nodoarianna * n, stazione * elemento, nodoarianna * r
     nodoarianna * elem = NewNode(elemento);
     elem ->raggiuntoda = raggiunto;
     n ->next = elem;
+    elem ->prev = n;
     return elem;
 }
 path * AggiungiinTestaPath(path * p, stazione * s){
@@ -782,11 +783,11 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     nodoarianna * n = NewNode(part);
     nodoarianna * lastnode = n;
     auton = autonomia_max_sinistra(curr);
-    while (curr ->kms < arr ->kms)
+    while (curr ->kms < arr ->kms) //un giro...
     {
         if(auton <= lastnode ->this ->kms)
         {
-            n = AnnodainCoda(n,curr,lastnode);
+            n = AnnodainCoda(n,curr,lastnode);//aggiungo nodi che raggiungono lastnode in un colpo.
             curr = curr->next;
             auton = autonomia_max_sinistra(curr);
         }
@@ -813,52 +814,66 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     }
     if(n->this != arr)
         return NULL;
-    //CORREGGI!
-    //da qui non va bene... correggi, perché devo riavvolgere il filo, non lo spaghetto.
-    curr = n->this->prev; //arr->prev.
-    auton = autonomia_max_sinistra(n->this);//arr
-    lastnode = n;//lastnode indica la stazione che raggiunge n. Tra lastnode -> this e lastnode -> raggiuntoda->this ci può essere una stazione da percorso migliore.
-    stazione * limit = lastnode->raggiuntoda->this;
-    //ho raccolto i dati dell'arrivo, quindi "arrotolo".
-    n = n->raggiuntoda;
-    pint foundbefore = 0;
-    stazione * candidata = NULL;
-    while (n ->raggiuntoda != NULL) //finché non arrivo alla partenza.
+    //ho l'albero qui...
+    nodoarianna * currnode = n->raggiuntoda;
+    lastnode = n;
+    auton = autonomia_max_sinistra(arr);
+    while (lastnode ->this->kms > part->kms)//finché non ho riavvolto il filo...
     {
-        while(curr ->kms > limit ->kms && foundbefore == 0)//cerco tra lastnode -> this e lastnode -> raggiuntoda->this la mia possibile stazione.
+        while (currnode->this->kms < lastnode->this->kms)
         {
-            if(auton <= curr ->kms) //se trovo la stazione, devo comunque vedere che non ce ne sia una più vicina alla partenza.
+            if(autonomia_max_sinistra(currnode ->this) >= auton)//se già con "arrivo" arrivo fino a lì, non serve staz...
             {
-                candidata = curr;//intanto me la salvo...
+                nodoarianna * succ = currnode ->next;
+                currnode ->prev ->next = succ;
+                if(lastnode ->raggiuntoda == currnode)
+                    lastnode->raggiuntoda = succ;
+                free(currnode);
+                currnode = succ;
             }
-            if(candidata != NULL && curr->prev->kms == limit ->kms)//se ho trovato una stazione, 
+            else //incremento puntatori, cerco di eliminare stazioni inutili. 
             {
-                foundbefore = 1;
-            }
-            if(foundbefore == 1){
-                while (lastnode ->this->kms > candidata->kms && lastnode ->next != NULL)
-                    lastnode = lastnode ->next;//torno indietro (legati da arrivo a partenza).
-                AggiungiinCodaPath(per,candidata);//candidata DEVE essere == a lastnode -> this.
-                n = lastnode ->raggiuntoda;//poi ripeto il tutto.
-                auton = autonomia_max_sinistra(lastnode->this);//sempre l'equiv.
-                limit = lastnode ->raggiuntoda->this;
-            }
-            else
-            {
-                curr = curr->prev;
+                currnode = currnode ->next;
             }
         }
-        if(candidata == NULL){
-          AggiungiinCodaPath(per,lastnode ->this);  
+        lastnode = lastnode ->raggiuntoda;//stazione più vicina alla partenza che "va lontano..."
+        currnode = lastnode ->raggiuntoda;//stazione più vicina che raggiunge stazione più vicina.
+    }//siccome parto da ultima stazione, sono sicuro che un percorso che minimizza le distanze dalla partenza esiste.
+    //qui fuori ho ottenuto un percorso che ha tutte le stazioni che raggiungono la partenza.   
+    //ho S stazioni. Ho fatto 2 giri, già 2n.
+    //Se nessuna stazione sopra la "seconda" arriva in un colpo solo lì, allora non è quella.
+    lastnode = n;
+    currnode = n->raggiuntoda;
+    nodoarianna * candidato = currnode;
+    auton = autonomia_max_sinistra(candidato);
+    while (lastnode ->this->kms > part->kms)//finché non ho riavvolto il filo...
+    {
+        candidato = currnode;
+        auton = autonomia_max_sinistra(candidato);
+        while (currnode->this->kms < lastnode ->this ->kms)
+        {
+            if(auton <= autonomia_max_sinistra(currnode))
+            {//non mi serve...
+                nodoarianna * succ = currnode ->next;
+                currnode ->prev ->next = succ;
+                if(lastnode ->raggiuntoda == currnode)
+                    lastnode->raggiuntoda = succ;
+                free(currnode);
+                currnode = succ;
+            }
+            else //incremento puntatori, cerco di eliminare stazioni inutili. 
+            {
+                currnode = currnode ->next;
+            }
         }
+        lastnode = lastnode ->raggiuntoda;//stazione più vicina alla partenza che "va lontano..."
+        currnode = lastnode ->raggiuntoda;//stazione più vicina che raggiunge stazione più vicina.
     }
-    if(n ->this == part){
-        AggiungiinCodaPath(per, n->this);
-        CancellaNodes(n);
-        return per;
-    }
-    CancellaNodes(n);
-    return NULL;
+    //qui ho tolto i nodi che non erano più utili del nodo più vicino alla partenza.
+    //avro'
+    //partenza, nodo più vicino che raggiunge, nodi che raggiungono partenza e vanno più in basso, nodo più vicino che raggiunge nodo più vicino...
+    //continua pensando a come vedere se un nodo in mezzo possa avere la possibilità (potendo arrivare più lontano), di far fare meno passi.
+
 }
 
 void plot_path(path * p){
