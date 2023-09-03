@@ -681,4 +681,110 @@ pint raggiuntocon = m ->raggiuntocon;
 
 */
 
+
+
+
+
+
+
+/*
+{
+
+    stazione * curr = part ->next;
+    nodoarianna * n = NewNode(part);
+    nodoarianna * lastnode = n;
+    auton = autonomia_max_sinistra(curr);
+    while (curr ->kms < arr ->kms) //un giro...
+    {
+        if(auton <= lastnode ->this ->kms)
+        {
+            n = AnnodainCoda(n,curr,lastnode);//aggiungo nodi che raggiungono lastnode in un colpo.
+            curr = curr->next;
+            auton = autonomia_max_sinistra(curr);
+        }
+        else
+        {
+            if(lastnode ->next == NULL)
+                return NULL;
+            lastnode = lastnode->next;
+        }
+    }
+    while (lastnode ->this->kms < arr->kms)
+    {
+        if(auton  <= lastnode->this->kms)
+        {
+            n = AnnodainCoda(n,arr,lastnode);
+            break;
+        }
+        else
+        {
+            if(lastnode ->next == NULL)
+                return NULL;
+            lastnode = lastnode->next;
+        }
+    }
+    if(n->this != arr)
+        return NULL;
+    //ho l'albero qui...
+    nodoarianna * currnode = n->raggiuntoda;
+    lastnode = n;
+    auton = autonomia_max_sinistra(arr);
+    while (lastnode ->this->kms > part->kms)//finché non ho riavvolto il filo...
+    {
+        while (currnode->this->kms < lastnode->this->kms)
+        {
+            if(autonomia_max_sinistra(currnode ->this) >= auton)//se già con "arrivo" arrivo fino a lì, non serve staz...
+            {
+                nodoarianna * succ = currnode ->next;
+                currnode ->prev ->next = succ;
+                if(lastnode ->raggiuntoda == currnode)
+                    lastnode->raggiuntoda = succ;
+                free(currnode);
+                currnode = succ;
+            }
+            else //incremento puntatori, cerco di eliminare stazioni inutili. 
+            {
+                currnode = currnode ->next;
+            }
+        }
+        lastnode = lastnode ->raggiuntoda;//stazione più vicina alla partenza che "va lontano..."
+        currnode = lastnode ->raggiuntoda;//stazione più vicina che raggiunge stazione più vicina.
+    }//siccome parto da ultima stazione, sono sicuro che un percorso che minimizza le distanze dalla partenza esiste.
+    //qui fuori ho ottenuto un percorso che ha tutte le stazioni che raggiungono la partenza.   
+    //ho S stazioni. Ho fatto 2 giri, già 2n.
+    //Se nessuna stazione sopra la "seconda" arriva in un colpo solo lì, allora non è quella.
+    lastnode = n;
+    currnode = n->raggiuntoda;
+    nodoarianna * candidato = currnode;
+    auton = autonomia_max_sinistra(candidato);
+    while (lastnode ->this->kms > part->kms)//finché non ho riavvolto il filo...
+    {
+        candidato = currnode;
+        auton = autonomia_max_sinistra(candidato);
+        while (currnode->this->kms < lastnode ->this ->kms)
+        {
+            if(auton <= autonomia_max_sinistra(currnode))
+            {//non mi serve...
+                nodoarianna * succ = currnode ->next;
+                currnode ->prev ->next = succ;
+                if(lastnode ->raggiuntoda == currnode)
+                    lastnode->raggiuntoda = succ;
+                free(currnode);
+                currnode = succ;
+            }
+            else //incremento puntatori, cerco di eliminare stazioni inutili. 
+            {
+                currnode = currnode ->next;
+            }
+        }
+        lastnode = lastnode ->raggiuntoda;//stazione più vicina alla partenza che "va lontano..."
+        currnode = lastnode ->raggiuntoda;//stazione più vicina che raggiunge stazione più vicina.
+    }
+    //qui ho tolto i nodi che non erano più utili del nodo più vicino alla partenza.
+    //avro'
+    //partenza, nodo più vicino che raggiunge, nodi che raggiungono partenza e vanno più in basso, nodo più vicino che raggiunge nodo più vicino...
+    //continua pensando a come vedere se un nodo in mezzo possa avere la possibilità (potendo arrivare più lontano), di far fare meno passi.
+
+}
+
 */

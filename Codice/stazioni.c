@@ -72,7 +72,7 @@ int max_vetture(head_vetture*h){
     if(h->lastindexv < 0)
     {
         if(h->countzero == 0)
-            return -1;
+            return 0;//-1, non trovato, non va bene
         else
             return 0;
     }
@@ -564,9 +564,11 @@ stazione * inserisci_stazione(route * r, int km){
 
 //#pragma region metodicomuni
 int autonomia_max_destra(stazione * curr){
+    //if(curr ->vetture == NULL) return curr->kms;
     return max_vetture(curr->vetture) + curr ->kms;
 }
 int autonomia_max_sinistra(stazione * curr){
+    //if(curr ->vetture == NULL) return curr->kms;
     int soglia = curr ->kms - max_vetture(curr->vetture);
     if(soglia > 0)
         return soglia;
@@ -642,6 +644,14 @@ typedef struct node
     struct node * next;
     struct node * prev;
 }nodoarianna;
+typedef struct nodoar{
+    stazione * this;
+    struct nodoar * raggiuntoda;
+    pint kmrelativo;
+    struct nodoar * next;
+    struct nodoar * prev;
+}nodosinistro;
+
 path * InitializePath(stazione * s){
     path * per = (path*) malloc(sizeof(path));
     per->km = s ->kms;
@@ -762,6 +772,31 @@ path * pianifica_percorso_destra(route * r, pint partenza, pint arrivo){
     CancellaNodes(n);
     return NULL;
 }
+nodosinistro* InMezzoMarco(nodosinistro * limiteinf, nodosinistro * limitesup, nodosinistro * currn, stazione * part){
+    nodosinistro * questo = limitesup;
+    pint opzionepartenza = 1;
+    if(currn ->this != part)
+        opzionepartenza = 0;
+    while(questo != limiteinf){
+    if(max_vetture(questo->this->vetture) + questo->kmrelativo >= currn->kmrelativo){
+    //etichetto
+        currn ->raggiuntoda = questo;
+        if(opzionepartenza == 0)//questo serve per non bloccare il programma se cerchi quella che ariva a part. 
+        {
+        if(currn->this != part) //se posso andare avanti.
+            currn = currn ->prev;
+        else //altrimenti.
+            return currn;//qui sono alla ricerca della stazione che raggiunge partenza, trovata.
+        }
+    }
+    else //altrimenti
+    {
+        questo = questo -> next;//limiteinf è più avanti, es. arr rispetto alle altre staz.
+    }
+    }
+    //fuori da ciclo
+    return currn;
+}
 path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     stazione * part = cerca_stazione(r,partenza);
     stazione * arr = cerca_stazione(r,arrivo);
@@ -771,6 +806,7 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     if(arr == part)
         return per;
     pint auton = autonomia_max_sinistra(arr);
+    
     if(auton <= part ->kms)
     {
         path * elemento = (path*) malloc(sizeof(path));
@@ -779,103 +815,73 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
         elemento ->next = NULL;
         return per;
     }
-    stazione * curr = part ->next;
-    nodoarianna * n = NewNode(part);
-    nodoarianna * lastnode = n;
-    auton = autonomia_max_sinistra(curr);
-    while (curr ->kms < arr ->kms) //un giro...
+    stazione * curr = part->next;
+    pint krel = arr->kms;
+    nodosinistro * n = (nodosinistro *)malloc(sizeof(nodosinistro));
+    n->kmrelativo = krel - part->kms;
+    n->this = part;
+    n->next  = NULL;
+    n->prev = NULL;
+    n->raggiuntoda = NULL;
+    nodosinistro * cucco = n; //vecchio puntatore, punta dall'inizio...
+    nodosinistro * new;
+    while (curr ->kms <= arr->kms)
     {
-        if(auton <= lastnode ->this ->kms)
-        {
-            n = AnnodainCoda(n,curr,lastnode);//aggiungo nodi che raggiungono lastnode in un colpo.
+        new = (nodosinistro *)malloc(sizeof(nodosinistro));
+        new ->this = curr;
+        new ->prev = n;
+        n->next = new;
+        new->raggiuntoda = NULL;
+        new ->next = NULL;
+        new ->kmrelativo = krel - curr->kms;
+        n = new; 
+        if(curr ->kms < arr ->kms)
             curr = curr->next;
-            auton = autonomia_max_sinistra(curr);
-        }
         else
-        {
-            if(lastnode ->next == NULL)
-                return NULL;
-            lastnode = lastnode->next;
-        }
-    }
-    while (lastnode ->this->kms < arr->kms)
-    {
-        if(auton  <= lastnode->this->kms)
-        {
-            n = AnnodainCoda(n,arr,lastnode);
             break;
-        }
-        else
+    }
+    //ho salvato stazioni con nuovo percorso relativo.
+    //ora
+    auton = max_vetture(n->this->vetture) + n->kmrelativo; //autonomia relativa...
+    nodosinistro * currn = n->prev;
+    while(currn->this->kms >= part ->kms)//finché non ho salvato chi raggiunge la part.
+    {
+        if(auton >= currn->kmrelativo) //registro le stazioni raggiungibili da n, con etichetta n.
         {
-            if(lastnode ->next == NULL)
-                return NULL;
-            lastnode = lastnode->next;
+            currn->raggiuntoda = n;
+            if(currn ->this->kms > part ->kms)
+                currn = currn->prev; //passo a prossima non etichettata. Riavvolgo nodo di Arianna.
+            else
+                break; //se ho inserito ultima, allora break.
+        }
+        else //sono arrivato alla fine dell'autonomia di n. Prossima tra n->prev e currn->next, ultima che è raggiunta da n.
+        {   
+            nodosinistro * mem = currn;
+            currn = InMezzoMarco(n, currn ->next,currn,part);//qui faccio verifica a ritroso su nodi...
+            if(mem == currn)
+                return NULL; //non raggiungo con nessuna la stazione currn.
+            n = mem;//tra il vecchio currn (mem) e il nuovo currn -> next abbiamo k salti effettuati e il k+1-esimo da effettuare. Vedremo quale stazione più vicina va più lontano... 
         }
     }
-    if(n->this != arr)
-        return NULL;
-    //ho l'albero qui...
-    nodoarianna * currnode = n->raggiuntoda;
-    lastnode = n;
-    auton = autonomia_max_sinistra(arr);
-    while (lastnode ->this->kms > part->kms)//finché non ho riavvolto il filo...
+    nodosinistro * s = cucco;
+    printf("\n");
+    while (s->next != NULL)
     {
-        while (currnode->this->kms < lastnode->this->kms)
-        {
-            if(autonomia_max_sinistra(currnode ->this) >= auton)//se già con "arrivo" arrivo fino a lì, non serve staz...
-            {
-                nodoarianna * succ = currnode ->next;
-                currnode ->prev ->next = succ;
-                if(lastnode ->raggiuntoda == currnode)
-                    lastnode->raggiuntoda = succ;
-                free(currnode);
-                currnode = succ;
-            }
-            else //incremento puntatori, cerco di eliminare stazioni inutili. 
-            {
-                currnode = currnode ->next;
-            }
-        }
-        lastnode = lastnode ->raggiuntoda;//stazione più vicina alla partenza che "va lontano..."
-        currnode = lastnode ->raggiuntoda;//stazione più vicina che raggiunge stazione più vicina.
-    }//siccome parto da ultima stazione, sono sicuro che un percorso che minimizza le distanze dalla partenza esiste.
-    //qui fuori ho ottenuto un percorso che ha tutte le stazioni che raggiungono la partenza.   
-    //ho S stazioni. Ho fatto 2 giri, già 2n.
-    //Se nessuna stazione sopra la "seconda" arriva in un colpo solo lì, allora non è quella.
-    lastnode = n;
-    currnode = n->raggiuntoda;
-    nodoarianna * candidato = currnode;
-    auton = autonomia_max_sinistra(candidato);
-    while (lastnode ->this->kms > part->kms)//finché non ho riavvolto il filo...
-    {
-        candidato = currnode;
-        auton = autonomia_max_sinistra(candidato);
-        while (currnode->this->kms < lastnode ->this ->kms)
-        {
-            if(auton <= autonomia_max_sinistra(currnode))
-            {//non mi serve...
-                nodoarianna * succ = currnode ->next;
-                currnode ->prev ->next = succ;
-                if(lastnode ->raggiuntoda == currnode)
-                    lastnode->raggiuntoda = succ;
-                free(currnode);
-                currnode = succ;
-            }
-            else //incremento puntatori, cerco di eliminare stazioni inutili. 
-            {
-                currnode = currnode ->next;
-            }
-        }
-        lastnode = lastnode ->raggiuntoda;//stazione più vicina alla partenza che "va lontano..."
-        currnode = lastnode ->raggiuntoda;//stazione più vicina che raggiunge stazione più vicina.
+        printf("\t %d:%d", s->this->kms, s->raggiuntoda->this->kms);
     }
-    //qui ho tolto i nodi che non erano più utili del nodo più vicino alla partenza.
-    //avro'
-    //partenza, nodo più vicino che raggiunge, nodi che raggiungono partenza e vanno più in basso, nodo più vicino che raggiunge nodo più vicino...
-    //continua pensando a come vedere se un nodo in mezzo possa avere la possibilità (potendo arrivare più lontano), di far fare meno passi.
-
+    printf("\n");
+    currn = cucco;
+    //o esiste stazione che arriva fino alla fine, oppure ho il problema che non riesco a raggiungere la fine.
+    //se una stazione raggiunge la fine, avrà raggiunto tutte quelle prima, quindi poi avrò l'if, non l'else.
+    //il cercare la stazione più vicina dalla lontana raggiunta mi fa sì che, a parità di tappe sono nel migliore, altrimenti ne ho uno con meno tappe. 
+    //qui devo ottenere partenza etichettata, cosicché poi a ritroso ottengo le stazioni da part ad arr (le aggiungo in coda).
+    while(currn ->raggiuntoda != NULL)//arrivo già dentro.
+    {
+        AggiungiinCodaPath(per,currn->this);
+        currn = currn ->raggiuntoda;
+    }
+    return per;
 }
-
 void plot_path(path * p){
     printf("\n");
     if(p == NULL)
