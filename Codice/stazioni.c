@@ -806,8 +806,7 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     if(arr == part)
         return per;
     pint auton = autonomia_max_sinistra(arr);
-    
-    if(auton <= part ->kms)
+    if(auton <= part ->kms)//caso base, due tappe...
     {
         path * elemento = (path*) malloc(sizeof(path));
         elemento ->km = part ->kms;
@@ -841,12 +840,22 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
             break;
     }
     //ho salvato stazioni con nuovo percorso relativo.
+    /*nodosinistro * s = n;
+    printf("\n");
+    while (s->prev != NULL)
+    {
+        printf("\t %d", s->this->kms);
+        s = s->prev;
+    }
+    printf("\t %d", s->this->kms);
+    printf("\n");*/
     //ora
-    nodosinistro * currn;
-    if(n->prev != NULL) 
+    nodosinistro * currn = n->prev;
+    /*if(n->prev != NULL) 
         currn = n->prev;
     else
         return NULL; //questo è perché se ho un solo elemento o è il caso base (verificato no) oppure non esiste il percorso...
+    */
     nodosinistro * limit = n;
     nodosinistro * thisn = n;
     nodosinistro * mem = n;
@@ -856,7 +865,7 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
         if(auton >= currn -> kmrelativo) //cerco di capire se thisn raggiunge currn.
         {
             currn ->raggiuntoda = thisn;
-            if(currn-> this -> kms == part -> kms){
+            if(currn-> this -> kms > part -> kms){
                 currn = currn ->prev;
             }
             else
@@ -866,8 +875,9 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
         }
         else
         {
-            if(limit == thisn)
+            if(limit ->kmrelativo >= thisn->kmrelativo)//serve affinché thisn non "oltrepassi" limit.
             {
+                if(mem == currn) return NULL; //se nessuna stazione in mezzo raggiunge currn...
                 thisn = currn -> next;//ultima stazione che viene raggiunta.
                 limit = mem; //prima o poi dovrò visitare i vecchi nodi che non ho visitato...
                 mem = currn; //devo sapere qual è l'ultimo nodo non visitato... sarà nuovo limit...
@@ -887,19 +897,30 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     while (s->next != NULL)
     {
         printf("\t %d:%d", s->this->kms, s->raggiuntoda->this->kms);
+        s = s->next;
     }
-    printf("\n");
-    currn = cucco;*/
+    printf("\t %d", s->this->kms);
+    printf("\n");*/
+    //currn = cucco;*/
 
     //o esiste stazione che arriva fino alla fine, oppure ho il problema che non riesco a raggiungere la fine.
     //se una stazione raggiunge la fine, avrà raggiunto tutte quelle prima, quindi poi avrò l'if, non l'else.
     //il cercare la stazione più vicina dalla lontana raggiunta mi fa sì che, a parità di tappe sono nel migliore, altrimenti ne ho uno con meno tappe. 
-    //qui devo ottenere partenza etichettata, cosicché poi a ritroso ottengo le stazioni da part ad arr (le aggiungo in coda).
+    //qui devo ottenere partenza etichettata, cosicché poi a ritroso ottengo le stazioni da part ad arr (le aggiungo in testa).
+    if(currn != cucco) return NULL; //devo puntare alla partenza.
     while(currn ->raggiuntoda != NULL)//arrivo già dentro.
     {
-        AggiungiinCodaPath(per,currn->this);//qui abbiamo che currn->raggiuntoda è il riferimento alla staizone più vicina dalla partenza che raggiunge currn. Di conseguenza, riavvolgendo il filo di Arianna...
+        //printf("\t %d:%d", currn->this->kms, currn->raggiuntoda->this->kms);
+        per = AggiungiinTestaPath(per,currn->this);//qui abbiamo che currn->raggiuntoda è il riferimento alla staizone più vicina dalla partenza che raggiunge currn. Di conseguenza, riavvolgendo il filo di Arianna...
         currn = currn ->raggiuntoda;
     }
+    path * pointer = per;
+    while(pointer ->next ->next != NULL)
+        pointer = pointer ->next;//pointer->next è l'ultimo...
+    //path * memoria = pointer ->next;
+    pointer ->next = NULL;
+    per = AggiungiinTestaPath(per, arr);//la stazione arrivo subisce inserimenti in testa, ma dovrebbe essere lei in testa...
+    //cancellanodosinistro.
     return per;
 }
 void plot_path(path * p){
