@@ -842,42 +842,62 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     }
     //ho salvato stazioni con nuovo percorso relativo.
     //ora
-    auton = max_vetture(n->this->vetture) + n->kmrelativo; //autonomia relativa...
-    nodosinistro * currn = n->prev;
-    while(currn->this->kms >= part ->kms)//finché non ho salvato chi raggiunge la part.
+    nodosinistro * currn;
+    if(n->prev != NULL) 
+        currn = n->prev;
+    else
+        return NULL; //questo è perché se ho un solo elemento o è il caso base (verificato no) oppure non esiste il percorso...
+    nodosinistro * limit = n;
+    nodosinistro * thisn = n;
+    nodosinistro * mem = n;
+    auton = max_vetture(thisn->this->vetture) + thisn->kmrelativo;
+    while (currn-> this -> kms >= part -> kms)
     {
-        if(auton >= currn->kmrelativo) //registro le stazioni raggiungibili da n, con etichetta n.
+        if(auton >= currn -> kmrelativo) //cerco di capire se thisn raggiunge currn.
         {
-            currn->raggiuntoda = n;
-            if(currn ->this->kms > part ->kms)
-                currn = currn->prev; //passo a prossima non etichettata. Riavvolgo nodo di Arianna.
+            currn ->raggiuntoda = thisn;
+            if(currn-> this -> kms == part -> kms){
+                currn = currn ->prev;
+            }
             else
-                break; //se ho inserito ultima, allora break.
+            {
+                break; //il ciclo, in realtà, termina qua.
+            }
         }
-        else //sono arrivato alla fine dell'autonomia di n. Prossima tra n->prev e currn->next, ultima che è raggiunta da n.
-        {   
-            nodosinistro * mem = currn;
-            currn = InMezzoMarco(n, currn ->next,currn,part);//qui faccio verifica a ritroso su nodi...
-            if(mem == currn)
-                return NULL; //non raggiungo con nessuna la stazione currn.
-            n = mem;//tra il vecchio currn (mem) e il nuovo currn -> next abbiamo k salti effettuati e il k+1-esimo da effettuare. Vedremo quale stazione più vicina va più lontano... 
+        else
+        {
+            if(limit == thisn)
+            {
+                thisn = currn -> next;//ultima stazione che viene raggiunta.
+                limit = mem; //prima o poi dovrò visitare i vecchi nodi che non ho visitato...
+                mem = currn; //devo sapere qual è l'ultimo nodo non visitato... sarà nuovo limit...
+                auton = max_vetture(thisn->this->vetture) + thisn->kmrelativo;//ogni volta che cambio thisn, cambio autonomia.
+            }
+            else
+            {
+                thisn = thisn -> next;//vado nelle stazioni "in mezzo" tra il vecchio thisn e limit.
+                auton = max_vetture(thisn->this->vetture) + thisn->kmrelativo;//ogni volta che cambio thisn, cambio autonomia.
+            }
         }
     }
-    nodosinistro * s = cucco;
+    //la visita è al più lineare... stazioni già visitate non vengono consultate.
+
+    /*nodosinistro * s = cucco;
     printf("\n");
     while (s->next != NULL)
     {
         printf("\t %d:%d", s->this->kms, s->raggiuntoda->this->kms);
     }
     printf("\n");
-    currn = cucco;
+    currn = cucco;*/
+
     //o esiste stazione che arriva fino alla fine, oppure ho il problema che non riesco a raggiungere la fine.
     //se una stazione raggiunge la fine, avrà raggiunto tutte quelle prima, quindi poi avrò l'if, non l'else.
     //il cercare la stazione più vicina dalla lontana raggiunta mi fa sì che, a parità di tappe sono nel migliore, altrimenti ne ho uno con meno tappe. 
     //qui devo ottenere partenza etichettata, cosicché poi a ritroso ottengo le stazioni da part ad arr (le aggiungo in coda).
     while(currn ->raggiuntoda != NULL)//arrivo già dentro.
     {
-        AggiungiinCodaPath(per,currn->this);
+        AggiungiinCodaPath(per,currn->this);//qui abbiamo che currn->raggiuntoda è il riferimento alla staizone più vicina dalla partenza che raggiunge currn. Di conseguenza, riavvolgendo il filo di Arianna...
         currn = currn ->raggiuntoda;
     }
     return per;

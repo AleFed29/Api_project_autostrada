@@ -455,3 +455,39 @@ path * pianifica_percorso_dasinistra(route * r, int partenza, int arrivo){
 
 
 */
+
+
+path * codicereverse(){
+    
+}
+
+
+
+
+
+
+
+/*
+auton = max_vetture(n->this->vetture) + n->kmrelativo; //autonomia relativa...
+    nodosinistro * currn = n->prev;
+    while(currn->this->kms >= part ->kms)//finché non ho salvato chi raggiunge la part.
+    {
+        if(auton >= currn->kmrelativo) //registro le stazioni raggiungibili da n, con etichetta n.
+        {
+            currn->raggiuntoda = n;
+            if(currn ->this->kms > part ->kms)
+                currn = currn->prev; //passo a prossima non etichettata. Riavvolgo nodo di Arianna.
+            else
+                break; //se ho inserito ultima, allora break.
+        }
+        else //sono arrivato alla fine dell'autonomia di n. Prossima tra n->prev e currn->next, ultima che è raggiunta da n.
+        {   
+            nodosinistro * mem = currn;
+            currn = InMezzoMarco(n, currn ->next,currn,part);//qui faccio verifica a ritroso su nodi...
+            if(mem == currn)
+                return NULL; //non raggiungo con nessuna la stazione currn.
+            n = mem;//tra il vecchio currn (mem) e il nuovo currn -> next abbiamo k salti effettuati e il k+1-esimo da effettuare. Vedremo quale stazione più vicina va più lontano... 
+        }
+    }
+
+*/
