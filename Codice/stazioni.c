@@ -430,15 +430,7 @@ int cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
         cancella_testa(r,cell);
     //scrolling
     scrolling_back(r,cell,lastline(r));
-    if(r->lastindex > 0)
-    {
-        r->lastindex--;
-    }
-    else
-    {
-        free(r);
-        r = NULL;
-    }
+    r->lastindex--;
     return 1;
 }
 int cancella_stazione(route * r, pint km){
@@ -529,10 +521,6 @@ stazione * inserimento_coda(route * r, pint km, stazione * ref){
     return new;
 }
 stazione * inserisci_stazione(route * r, int km){
-    if(r == NULL){
-        r = InitializeAUTOSTRADA(km);
-        return r->AUTOSTRADA[0];
-    }
     if(km < r->AUTOSTRADA[0]->kms) //inserisco minimo
         return inserimento_testa(r,km,0);
     if(km > r->AUTOSTRADA[0]->prev->kms)//inserisco massimo
@@ -576,11 +564,9 @@ stazione * inserisci_stazione(route * r, int km){
 
 //#pragma region metodicomuni
 int autonomia_max_destra(stazione * curr){
-    //if(curr ->vetture == NULL) return curr->kms;
     return max_vetture(curr->vetture) + curr ->kms;
 }
 int autonomia_max_sinistra(stazione * curr){
-    //if(curr ->vetture == NULL) return curr->kms;
     int soglia = curr ->kms - max_vetture(curr->vetture);
     if(soglia > 0)
         return soglia;
@@ -648,7 +634,6 @@ typedef struct percorso
     pint km;
     struct percorso * next;
 }path;
-
 typedef struct node
 {
     stazione * this;
@@ -663,7 +648,6 @@ typedef struct nodoar{
     struct nodoar * next;
     struct nodoar * prev;
 }nodosinistro;
-
 path * InitializePath(stazione * s){
     path * per = (path*) malloc(sizeof(path));
     per->km = s ->kms;
@@ -967,7 +951,21 @@ int main(){
                         break;
                 }
                 if(i == numeromacchine)
-                    aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
+                {
+                    if(r != NULL)
+                        aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
+                    else
+                    {
+                        r = InitializeAUTOSTRADA(kmstazione);
+                        for(i = 0; i < numeromacchine; i++)
+                            insert_vetture(r->AUTOSTRADA[0]->vetture, ptr[i]);
+                        printf("\n aggiunta \n");
+                    }
+                }
+                else
+                {
+                    printf("\n non aggiunta \n");
+                }
                 free(ptr); //dovrebbe essere sicura.
                 }
             }
