@@ -430,7 +430,15 @@ int cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
         cancella_testa(r,cell);
     //scrolling
     scrolling_back(r,cell,lastline(r));
-    r->lastindex--;
+    if(r->lastindex > 0)
+    {
+        r->lastindex--;
+    }
+    else
+    {
+        free(r);
+        r = NULL;
+    }
     return 1;
 }
 int cancella_stazione(route * r, pint km){
@@ -521,6 +529,10 @@ stazione * inserimento_coda(route * r, pint km, stazione * ref){
     return new;
 }
 stazione * inserisci_stazione(route * r, int km){
+    if(r == NULL){
+        r = InitializeAUTOSTRADA(km);
+        return r->AUTOSTRADA[0];
+    }
     if(km < r->AUTOSTRADA[0]->kms) //inserisco minimo
         return inserimento_testa(r,km,0);
     if(km > r->AUTOSTRADA[0]->prev->kms)//inserisco massimo
@@ -772,30 +784,16 @@ path * pianifica_percorso_destra(route * r, pint partenza, pint arrivo){
     CancellaNodes(n);
     return NULL;
 }
-nodosinistro* InMezzoMarco(nodosinistro * limiteinf, nodosinistro * limitesup, nodosinistro * currn, stazione * part){
-    nodosinistro * questo = limitesup;
-    pint opzionepartenza = 1;
-    if(currn ->this != part)
-        opzionepartenza = 0;
-    while(questo != limiteinf){
-    if(max_vetture(questo->this->vetture) + questo->kmrelativo >= currn->kmrelativo){
-    //etichetto
-        currn ->raggiuntoda = questo;
-        if(opzionepartenza == 0)//questo serve per non bloccare il programma se cerchi quella che ariva a part. 
-        {
-        if(currn->this != part) //se posso andare avanti.
-            currn = currn ->prev;
-        else //altrimenti.
-            return currn;//qui sono alla ricerca della stazione che raggiunge partenza, trovata.
-        }
-    }
-    else //altrimenti
+void FreeSxNode(nodosinistro * s)
+{
+    nodosinistro * r = s;
+    while (s->next != NULL)
     {
-        questo = questo -> next;//limiteinf è più avanti, es. arr rispetto alle altre staz.
+        s = s->next;
+        free(r);
+        r = s;
     }
-    }
-    //fuori da ciclo
-    return currn;
+    free(s);
 }
 path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     stazione * part = cerca_stazione(r,partenza);
@@ -891,18 +889,6 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
         }
     }
     //la visita è al più lineare... stazioni già visitate non vengono consultate.
-
-    /*nodosinistro * s = cucco;
-    printf("\n");
-    while (s->next != NULL)
-    {
-        printf("\t %d:%d", s->this->kms, s->raggiuntoda->this->kms);
-        s = s->next;
-    }
-    printf("\t %d", s->this->kms);
-    printf("\n");*/
-    //currn = cucco;*/
-
     //o esiste stazione che arriva fino alla fine, oppure ho il problema che non riesco a raggiungere la fine.
     //se una stazione raggiunge la fine, avrà raggiunto tutte quelle prima, quindi poi avrò l'if, non l'else.
     //il cercare la stazione più vicina dalla lontana raggiunta mi fa sì che, a parità di tappe sono nel migliore, altrimenti ne ho uno con meno tappe. 
@@ -921,6 +907,7 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     pointer ->next = NULL;
     per = AggiungiinTestaPath(per, arr);//la stazione arrivo subisce inserimenti in testa, ma dovrebbe essere lei in testa...
     //cancellanodosinistro.
+    FreeSxNode(cucco);
     return per;
 }
 void plot_path(path * p){
@@ -979,27 +966,8 @@ int main(){
                     if(!scanf("%d ", &ptr[i]))
                         break;
                 }
-                if(r != NULL && i == numeromacchine){
+                if(i == numeromacchine)
                     aggiungi_stazione(r,kmstazione,numeromacchine, ptr);
-                }
-                else
-                {
-                    if(i == numeromacchine)
-                    {
-                        r = InitializeAUTOSTRADA(kmstazione);
-                        i = 0;
-                        while (i < numeromacchine)
-                        {
-                            insert_vetture(r->AUTOSTRADA[0]->vetture,ptr[i]);
-                            i++;
-                        }
-                        printf("\n aggiunta \n");
-                    }
-                    else
-                    {
-                        printf("\n non aggiunta \n");
-                    }
-                }
                 free(ptr); //dovrebbe essere sicura.
                 }
             }
