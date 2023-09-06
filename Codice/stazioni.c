@@ -399,7 +399,8 @@ void cancella_testa(route * r, pint cell){
         r->AUTOSTRADA[cell] ->prev = old ->prev;
     else
         r->AUTOSTRADA[0]->prev = old ->prev; //ho svuotato ultima riga.
-    old->prev->next = r->AUTOSTRADA[cell];
+    if(cell != 0)
+        old->prev->next = r->AUTOSTRADA[cell];//altrimenti diventa circolare...
     free(old);
 }
 void cancella_coda(route * r, stazione * ref){
