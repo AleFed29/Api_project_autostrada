@@ -5,6 +5,7 @@
 
 #define MAXVETTURE 512 
 typedef unsigned int pint;
+int EDGECASE = 0;
 //#pragma region vetture
 typedef struct head
 {
@@ -433,9 +434,19 @@ int cancellazione(route * r, stazione * elemento, pint cell, pint posizione){
     r->lastindex--;
     return 1;
 }
+void Azzera(route * r){
+    r->AUTOSTRADA[0]->kms = 0;
+    head_vetture * h = r->AUTOSTRADA[0]->vetture;
+    free(h);
+    r->AUTOSTRADA[0]->vetture = Initialize();
+    EDGECASE = 1;
+}
 int cancella_stazione(route * r, pint km){
-    if(r->lastindex < 0) 
-        return 0;
+    if(r->lastindex == 0 && r->AUTOSTRADA[0]->kms == km) //non conviene eliminare struttura.
+    {
+        Azzera(r);
+        return 1;
+    }
     if(km > max(r)->kms) //printf("\n Non c'è una stazione al km %d.\n", km);
         return 0;
     if(km < min(r)->kms) //printf("\n Non c'è una stazione al km %d.\n", km);
@@ -521,6 +532,16 @@ stazione * inserimento_coda(route * r, pint km, stazione * ref){
     return new;
 }
 stazione * inserisci_stazione(route * r, int km){
+    if(r->lastindex == 0 && r->AUTOSTRADA[0]->kms == km && km == 0)//se ho azzerato l'autostrada, ho già inserito l'elemento. 
+    {
+        if(numberofelement(r->AUTOSTRADA[0]->vetture) == 0 && EDGECASE == 1)//aggiungi-stazione 0 n
+        {   
+            EDGECASE = 0;//ho esaurito l'edge case... 
+            return r->AUTOSTRADA[0]; //in quel caso, è già inserita
+        }
+        else
+            return NULL; //sto facendo aggiungi 0 per la seconda volta...
+    }
     if(km < r->AUTOSTRADA[0]->kms) //inserisco minimo
         return inserimento_testa(r,km,0);
     if(km > r->AUTOSTRADA[0]->prev->kms)//inserisco massimo
