@@ -573,8 +573,10 @@ stazione * inserisci_stazione(route * r, int km){
     if(i < nodes){// allora curr->next == NULL
         if(curr->kms > km)
             return inserimento(r,km,curr->prev, cell);
-        else
+        else if(curr ->kms < km)
             return inserimento(r,km,curr, cell); //sto inserendo massimo.
+        else
+            return NULL; //doppione del massimo.
     }
     else if(i == nodes)//qui sono certo che cell < lastline(r), altrimenti avrei tutto pieno.
         return inserimento_testa(r,km,cell+1);//sono a fine riga, ma la stazione della nuova riga esiste.
@@ -1012,8 +1014,8 @@ int main(){
                 int kmstazione = 0;
                 //int kmstazione= (int)strtol(token1, &end, 10);
                 if(scanf("%d", &kmstazione)){
-                if(r != NULL)
-                    demolisci_stazione(r, kmstazione);
+                    if(r != NULL)
+                        demolisci_stazione(r, kmstazione);
                 }
             }
             //else if (strcmp(token1,"rottama-auto") == 0)
