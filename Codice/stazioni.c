@@ -602,46 +602,46 @@ int autonomia_max_sinistra(stazione * curr){
 void aggiungi_stazione(route * r, int km,int numeromacchine, int * macchine){
     stazione * inserita = inserisci_stazione(r,km);
     if(inserita == NULL){
-        printf("\n non aggiunta \n");
+        printf("\nnon aggiunta");
         return;
     }
     pint i;
     if(macchine != NULL)
         for(i = 0; i < numeromacchine; i++)
             insert_vetture(inserita->vetture,macchine[i]);
-    printf("\n aggiunta \n");
+    printf("\naggiunta");
 }
 void demolisci_stazione(route * r, int km){
     int feedback = cancella_stazione(r,km);
     if(feedback == 0)
-        printf("\n non demolita \n");
-    else printf("\n demolita \n");
+        printf("\nnon demolita");
+    else printf("\ndemolita");
 }
 void aggiungi_auto(route *r, int km, int vettura){
     stazione * s = cerca_stazione(r,km);
-    if(s == NULL) printf("\n non aggiunta \n");
+    if(s == NULL) printf("\nnon aggiunta");
     else
     {
     if(numberofelement(s->vetture) < MAXVETTURE){
         if(insert_vetture(s->vetture, vettura) == 1)
-            printf("\n aggiunta \n");
+            printf("\naggiunta");
         else
-            printf("\n non aggiunta \n");
+            printf("\nnon aggiunta");
     }
     else
-        printf("\n non aggiunta \n");
+        printf("\nnon aggiunta");
     }
 }
 void rottama_auto(route * r, int km, int vettura){
     stazione * s = cerca_stazione(r,km);
-    if(s == NULL) printf("\n non rottamata \n");
+    if(s == NULL) printf("\nnon rottamata");
     else
     {
     int feedback = cancella_vetture(s->vetture,vettura);
     if(feedback == 1)
-        printf("\n rottamata \n");
+        printf("\nrottamata");
     else
-        printf("\n non rottamata \n");
+        printf("\nnon rottamata");
     }
 }
 /*
@@ -919,25 +919,25 @@ path * pianifica_percorso_sinistra(route * r, pint partenza, pint arrivo){
     return per;
 }
 void plot_path(path * p){
-    printf("\n");
+    //printf("\n");
     if(p == NULL)
     {
-        printf("\n nessun percorso \n");
+        printf("\nnessun percorso");
         return;
     }
     if(p->next == NULL)
     {
-        printf("\t %d\n", p->km);
+        printf("%d", p->km);
         free(p);
         return;
     }
     path * dacanc = p;
     while (p->next != NULL){
-        printf("\t %d", p->km);
+        printf(" %d", p->km);
         p = p->next;
     }
-    printf("\t %d", p->km);
-    printf("\n");
+    printf(" %d", p->km);
+    //printf("\n");
     CancellaPath(dacanc);
 }
 //#pragma endregion
@@ -983,12 +983,12 @@ int main(){
                         r = InitializeAUTOSTRADA(kmstazione);
                         for(i = 0; i < numeromacchine; i++)
                             insert_vetture(r->AUTOSTRADA[0]->vetture, ptr[i]);
-                        printf("\n aggiunta \n");
+                        printf("\naggiunta");
                     }
                 }
                 else
                 {
-                    printf("\n non aggiunta \n");
+                    printf("\nnon aggiunta");
                 }
                 free(ptr); //dovrebbe essere sicura.
                 }
@@ -1050,13 +1050,13 @@ int main(){
                         plot_path(pianifica_percorso_sinistra(r,a,p));
                     }
                     else{
-                        printf("\n nessun percorso \n");
+                        printf("\nnessun percorso");
                     }
                     }
                 }
                 else
                 {
-                    printf("\n nessun percorso \n");
+                    printf("\nnessun percorso");
                 }
             }
         }
