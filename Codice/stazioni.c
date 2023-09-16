@@ -30,9 +30,18 @@ head_vetture * Initialize(){
 }
 int search_index(head_vetture*h, int key,int start, int stop, int forinsertion){
     int mid = 0;
+    if(h->first[start] == key)//facendo ceiling non ottengo il valore minimo con mid.
+        return start;
+    if(h->first[stop] == key)
+        return stop;
     if(start == stop)
     {
-        if(forinsertion == 1 || h->first[start] == key)
+        if(forinsertion == 1)
+        {
+            if(h->first[start] > key)
+                return start;
+        }
+        else if(h->first[start] == key)
             return start;
         else
             return -1;
